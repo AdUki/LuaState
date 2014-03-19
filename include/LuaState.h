@@ -39,7 +39,7 @@ namespace lua {
         State& operator= (const State &) = delete;
         State& operator= (State &&) = default;
         
-        Value operator[](const char* name) {
+        Value operator[](LuaType::String name) {
             return Value(_luaState, name);
         }
         

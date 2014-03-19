@@ -13,6 +13,7 @@
 #include "./LuaStack.h"
 #include "./LuaPrimitives.h"
 #include "./LuaFunction.h"
+#include "./LuaKey.h"
 
 namespace lua {
 
@@ -23,7 +24,9 @@ namespace lua {
         
         mutable int _pushedValues;
         const int _stackTop;
+        Key _key;
         
+        //////////////////////////////////////////////////////////////////////////////////////////////////
         void checkStack() const {
             printf("%d %d\n", stack::numberOfPushedValues(_luaState.get()), _pushedValues);
             if (stack::numberOfPushedValues(_luaState.get()) - _stackTop != _pushedValues) {
@@ -41,6 +44,7 @@ namespace lua {
         , _stackTop(stack::numberOfPushedValues(_luaState.get())) {
             printf("GET  %s\n", name);
             lua_getglobal(_luaState.get(), name);
+            _key.set(name);
             ++_pushedValues;
         }
         
@@ -62,7 +66,9 @@ namespace lua {
         Value&& operator[](T key) {
             checkStack();
             stack::get(_luaState.get(), -1, key);
+            _key.set(key);
             ++_pushedValues;
+            
             return std::move(*this);
         }
 
@@ -80,8 +86,6 @@ namespace lua {
             return Function(_luaState, sizeof...(args));
         }
         
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-        
         template<typename T>
         operator T() const {
             checkStack();
@@ -89,6 +93,14 @@ namespace lua {
             stack::pop(_luaState.get(), 1);
             --_pushedValues;
             return retValue;
+        }
+        
+        template<typename T>
+        void operator= (const T& value) const {
+            checkStack();
+            _key.push(_luaState.get());
+            stack::push(_luaState.get(), value);
+            lua_settable(_luaState.get(), -4);
         }
 
         // other functions

@@ -6,7 +6,7 @@
         printf("OK %s == %s\n", #code, #result); \
     } \
     else { \
-        printf("FAIL %s\n", #code); \
+        printf("FAIL %s == %s\n", #code, #result); \
         assert(false); \
     } \
 }
@@ -113,7 +113,21 @@ int main(int argc, char** argv)
     float floatValue;
     lua::tie(doubleValue, intValue, boolValue, floatValue) = state["multiRet"]();
     
-    check(state.flushStack(), 0);
+    state["tab"]["a"] = 33;
+    intValue = state["tab"]["a"];
+    check(state["tab"]["a"], 33);
+
+    state["tab"][10] = 44;
+    state["tab"][10] = 55;
+    intValue = state["tab"][10];
+    check(state["tab"][10], 55);
     
+    state["tab"][11] = "text";
+    cText = state["tab"][11];
+    text = cText;
+    check(text, "text");
+    
+    
+    check(state.flushStack(), 0);
     return 0;
 }
