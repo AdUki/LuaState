@@ -66,6 +66,21 @@ int main(int argc, char** argv)
         check(ct1, 10);
         check(ct2, 20);
         check(ct3, 30);
+        
+        {
+            lua::Value table2 = state["tab"];
+            int tab = table2["a"];
+            check(tab, 1);
+            
+            try {
+                ct2 = table[1];
+                assert(false);
+            } catch (lua::StackError exp) {
+                check(ct2, 20);
+            }
+        }
+        ct2 = table[1];
+        check(ct2, 10);
     }
     
     int intValue = state["tab"]["ct"][2];

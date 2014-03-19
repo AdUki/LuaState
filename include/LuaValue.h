@@ -22,10 +22,13 @@ namespace lua {
         std::shared_ptr<lua_State> _luaState;
         
         mutable int _pushedValues;
+        const int _stackTop;
         
         void checkStack() const {
-            if (stack::numberOfPushedValues(_luaState.get()) != _pushedValues)
+            printf("%d %d\n", stack::numberOfPushedValues(_luaState.get()), _pushedValues);
+            if (stack::numberOfPushedValues(_luaState.get()) - _stackTop != _pushedValues) {
                 throw StackError(stack::numberOfPushedValues(_luaState.get()), _pushedValues);
+            }
         }
         
     public:
@@ -34,7 +37,8 @@ namespace lua {
         
         Value(const std::shared_ptr<lua_State>& luaState, const char* name)
         : _luaState(luaState)
-        , _pushedValues(stack::numberOfPushedValues(_luaState.get())) {
+        , _pushedValues(0)
+        , _stackTop(stack::numberOfPushedValues(_luaState.get())) {
             printf("GET  %s\n", name);
             lua_getglobal(_luaState.get(), name);
             ++_pushedValues;
