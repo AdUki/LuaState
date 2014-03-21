@@ -1,9 +1,9 @@
 LuaState
 ========
 
-Lua51 binding library
+Lightweight Lua51 binding library for C++11.
 
- ### Setting it up
+### Setting it up
 
 Just create lua::State variable, which will initialize lus_State and loads up standard libraries. It will close state automatically in destructor.
 
@@ -14,7 +14,7 @@ int main() {
  }
 ```
 
- ### Reading values
+### Reading values
 
 Reading values from Lua state is very simple. It is using templates, so type information is required.
 
@@ -33,7 +33,7 @@ int b = state["table"]["b"][1];
 int c = state["table"]["c"];
 ```
 
- ### Calling functions
+### Calling functions
 
 You can call lua functions with () operator with various number of arguments while returning none, one or more values.
 
@@ -49,7 +49,7 @@ state.doString("function add(x, y) return x + y end");
 int result = state["add"](1,2);
 ```
 
- ### Setting values
+### Setting values
  
 Is also pretty straightforward...
 
