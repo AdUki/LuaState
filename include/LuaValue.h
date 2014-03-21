@@ -13,39 +13,6 @@
 #include "./LuaStack.h"
 #include "./LuaPrimitives.h"
 #include "./LuaFunction.h"
-#include "./LuaKey.h"
-
-static void stackDump (lua_State *L)
-{
-    int i;
-    int top = lua_gettop(L);
-    printf("========= %d \n", top);
-    for (i = 1; i <= top; i++) {  /* repeat for each level */
-        int t = lua_type(L, i);
-        switch (t) {
-                
-            case LUA_TSTRING:  /* strings */
-                printf("`%s'", lua_tostring(L, i));
-                break;
-                
-            case LUA_TBOOLEAN:  /* booleans */
-                printf(lua_toboolean(L, i) ? "true" : "false");
-                break;
-                
-            case LUA_TNUMBER:  /* numbers */
-                printf("%g", lua_tonumber(L, i));
-                break;
-                
-            default:  /* other values */
-                printf("%s", lua_typename(L, t));
-                break;
-                
-        }
-        printf("  ");  /* put a separator */
-    }
-    printf("\n");  /* end the listing */
-    printf("=========\n");
-}
 
 namespace lua {
 
@@ -56,7 +23,6 @@ namespace lua {
         
         mutable int _pushedValues;
         const int _stackTop;
-        Key _key;
         
         //////////////////////////////////////////////////////////////////////////////////////////////////
         void checkStack() const {
@@ -72,8 +38,7 @@ namespace lua {
         Value(const std::shared_ptr<lua_State>& luaState, const char* name)
         : _luaState(luaState)
         , _pushedValues(2)
-        , _stackTop(stack::numberOfPushedValues(_luaState.get()))
-        , _key(name) {
+        , _stackTop(stack::numberOfPushedValues(_luaState.get())) {
             stack::push(luaState.get(), name);
             stack::get(_luaState.get(), LUA_GLOBALSINDEX, name);
         }
@@ -120,11 +85,9 @@ namespace lua {
         template<typename T>
         operator T() const {
             checkStack();
-            stackDump(_luaState.get());
             auto retValue = stack::read<T>(_luaState.get(), -1);
             stack::pop(_luaState.get(), 2);
             _pushedValues -= 2;
-            stackDump(_luaState.get());
             return retValue;
         }
         
@@ -148,15 +111,6 @@ namespace lua {
 
         // other functions
         //////////////////////////////////////////////////////////////////////////////////////////////////
-
-        // TODO: getTable, ktora ma variabilny pocet parametrov ako kluce
-//        template <typename... Ret>
-//        std::tuple<Ret...> getTable() const {
-//            auto returnValue = stack::get<Ret...>(_luaState);
-//            lua_settop(_luaState, 0);
-//            
-//            return returnValue;
-//        }
         
     };
     
