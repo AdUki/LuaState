@@ -38,7 +38,6 @@ namespace lua {
         
         template<typename T>
         operator T() const {
-            printf("  function call\n");
             lua_call(_luaState.get(), _numArgs, 1);
             _executed = true;
             

@@ -73,6 +73,12 @@ namespace lua { namespace stack {
         printf("  PUSH  null\n");
         lua_pushnil(luaState);
     }
+    
+    template<>
+    inline void push(lua_State* luaState, Table value) {
+        printf("  PUSH  newTable\n");
+        lua_newtable(luaState);
+    }
 
     template<>
     inline void push(lua_State* luaState, float value) {
@@ -150,7 +156,7 @@ namespace lua { namespace stack {
 
         template<std::size_t... Is>
         static std::tuple<Ts...> create(lua_State* luaState, Indexes<Is...>) {
-            return std::make_tuple(read<Ts>(luaState, Is + 1)...);
+            return std::make_tuple(read<Ts>(luaState, Is + 2)...);
         }
         
     public:
@@ -168,6 +174,11 @@ namespace lua { namespace stack {
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    inline void get(lua_State* luaState, int index) {
+        printf("GET\n");
+        lua_gettable(luaState, index);
+    }
     
     template<typename T>
     inline void get(lua_State* luaState, int index, T key) {}

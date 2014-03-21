@@ -15,6 +15,38 @@
 #include "./LuaFunction.h"
 #include "./LuaKey.h"
 
+static void stackDump (lua_State *L)
+{
+    int i;
+    int top = lua_gettop(L);
+    printf("========= %d \n", top);
+    for (i = 1; i <= top; i++) {  /* repeat for each level */
+        int t = lua_type(L, i);
+        switch (t) {
+                
+            case LUA_TSTRING:  /* strings */
+                printf("`%s'", lua_tostring(L, i));
+                break;
+                
+            case LUA_TBOOLEAN:  /* booleans */
+                printf(lua_toboolean(L, i) ? "true" : "false");
+                break;
+                
+            case LUA_TNUMBER:  /* numbers */
+                printf("%g", lua_tonumber(L, i));
+                break;
+                
+            default:  /* other values */
+                printf("%s", lua_typename(L, t));
+                break;
+                
+        }
+        printf("  ");  /* put a separator */
+    }
+    printf("\n");  /* end the listing */
+    printf("=========\n");
+}
+
 namespace lua {
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +60,6 @@ namespace lua {
         
         //////////////////////////////////////////////////////////////////////////////////////////////////
         void checkStack() const {
-            printf("%d %d\n", stack::numberOfPushedValues(_luaState.get()), _pushedValues);
             if (stack::numberOfPushedValues(_luaState.get()) - _stackTop != _pushedValues) {
                 throw StackError(stack::numberOfPushedValues(_luaState.get()), _pushedValues);
             }
@@ -40,9 +71,12 @@ namespace lua {
         
         Value(const std::shared_ptr<lua_State>& luaState, const char* name)
         : _luaState(luaState)
-        , _pushedValues(0)
+        , _pushedValues(2)
         , _stackTop(stack::numberOfPushedValues(_luaState.get()))
-        , _key(name) {}
+        , _key(name) {
+            stack::push(luaState.get(), name);
+            stack::get(_luaState.get(), LUA_GLOBALSINDEX, name);
+        }
         
         ~Value() {
             if (_luaState != nullptr)
@@ -62,24 +96,23 @@ namespace lua {
         Value&& operator[](T key) {
             checkStack();
             
-            if (_key.get(_luaState.get()))
-                ++_pushedValues;
-            
-            _key.set(key);
+            stack::push(_luaState.get(), key);
+            stack::get(_luaState.get(), -2, key);
+            _pushedValues += 2;
             
             return std::move(*this);
         }
 
         Function operator()() const {
             checkStack();
-            _key.get(_luaState.get());
+            _pushedValues -= 1;
             return Function(_luaState, 0);
         }
         
         template<typename... Ts>
         Function operator()(Ts... args) const {
             checkStack();
-            _key.get(_luaState.get());
+            _pushedValues -= 1;
             stack::push(_luaState.get(), args...);
             return Function(_luaState, sizeof...(args));
         }
@@ -87,19 +120,30 @@ namespace lua {
         template<typename T>
         operator T() const {
             checkStack();
-            
-            _key.get(_luaState.get());
+            stackDump(_luaState.get());
             auto retValue = stack::read<T>(_luaState.get(), -1);
-            stack::pop(_luaState.get(), 1);
+            stack::pop(_luaState.get(), 2);
+            _pushedValues -= 2;
+            stackDump(_luaState.get());
             return retValue;
         }
         
         template<typename T>
         void operator= (const T& value) const {
             checkStack();
-            _key.push(_luaState.get());
-            stack::push(_luaState.get(), value);
-            lua_settable(_luaState.get(), -3);
+            
+            stack::pop(_luaState.get(), 1);
+            
+            if (_pushedValues == 2) {
+                LuaType::String name = stack::pop_front<LuaType::String>(_luaState.get());
+                stack::push(_luaState.get(), value);
+                lua_setglobal(_luaState.get(), name);
+            }
+            else {
+                stack::push(_luaState.get(), value);
+                lua_settable(_luaState.get(), -3);
+            }
+            _pushedValues -= 2;
         }
 
         // other functions

@@ -98,7 +98,7 @@ int main(int argc, char** argv)
     state.doString("function setGlobalTest(name, value) testGlobal = 666 end");
     state["setGlobalTest"]();
     check(state["testGlobal"], 666);
-    
+
     state.doString("function setGlobal(name, value) _G[name] = value end");
     state["setGlobal"]("a", 1000000);
     check(state["a"], 1000000);
@@ -116,17 +116,24 @@ int main(int argc, char** argv)
 //    text = state["cat"]("aa","bb");
     text = cText; // TODO: fix na string
     check(text, "aabb");
-    
+
     state.doString("function multiRet() return 4.5, 10, false, 6.5 end");
     double doubleValue;
     float floatValue;
     lua::tie(doubleValue, intValue, boolValue, floatValue) = state["multiRet"]();
-    
+    check(doubleValue, 4.5);
+    check(intValue, 10);
+    check(boolValue, false);
+    check(floatValue, 6.5);
+
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     state["tab"]["a"] = 33;
     intValue = state["tab"]["a"];
     check(state["tab"]["a"], 33);
+    
+    state["var"] = 8;
+    check(state["var"], 8);
     
     state["tab"][10] = 44;
     state["tab"][10] = 55;
@@ -150,6 +157,13 @@ int main(int argc, char** argv)
     
     state["nested"][1][1]["a"] = "OK";
     check(state["nested"][1][1]["a"], "OK");
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+
+    state["newTable"] = 8;
+    state["newTable"] = lua::Table();
+    state["newTable"][1] = 5;
+    check(state["newTable"][1], 5);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

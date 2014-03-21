@@ -8,6 +8,10 @@
 
 #pragma once
 
+namespace lua {
+    struct Table {};
+}
+
 namespace LuaType
 {
     typedef lua_Number Number;
@@ -21,7 +25,7 @@ namespace LuaType
     typedef std::nullptr_t Null;
     
     typedef void* LUserdata;
-    
+
     // table
     // function
     // full userdata

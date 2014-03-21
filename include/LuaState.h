@@ -67,6 +67,7 @@ namespace lua {
         /// @returns Number of flushed items
         int flushStack() {
             int count = stack::numberOfPushedValues(_luaState.get());
+            printf("Flushed %d elements from stack\n", count);
             lua_settop(_luaState.get(), 0);
             return count;
         }
