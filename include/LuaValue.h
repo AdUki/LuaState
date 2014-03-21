@@ -41,12 +41,8 @@ namespace lua {
         Value(const std::shared_ptr<lua_State>& luaState, const char* name)
         : _luaState(luaState)
         , _pushedValues(0)
-        , _stackTop(stack::numberOfPushedValues(_luaState.get())) {
-            printf("GET  %s\n", name);
-            lua_getglobal(_luaState.get(), name);
-            _key.set(name);
-            ++_pushedValues;
-        }
+        , _stackTop(stack::numberOfPushedValues(_luaState.get()))
+        , _key(name) {}
         
         ~Value() {
             if (_luaState != nullptr)
@@ -65,23 +61,25 @@ namespace lua {
         template<typename T>
         Value&& operator[](T key) {
             checkStack();
-            stack::get(_luaState.get(), -1, key);
+            
+            if (_key.get(_luaState.get()))
+                ++_pushedValues;
+            
             _key.set(key);
-            ++_pushedValues;
             
             return std::move(*this);
         }
 
         Function operator()() const {
             checkStack();
-            --_pushedValues;
+            _key.get(_luaState.get());
             return Function(_luaState, 0);
         }
         
         template<typename... Ts>
         Function operator()(Ts... args) const {
             checkStack();
-            --_pushedValues;
+            _key.get(_luaState.get());
             stack::push(_luaState.get(), args...);
             return Function(_luaState, sizeof...(args));
         }
@@ -89,9 +87,10 @@ namespace lua {
         template<typename T>
         operator T() const {
             checkStack();
+            
+            _key.get(_luaState.get());
             auto retValue = stack::read<T>(_luaState.get(), -1);
             stack::pop(_luaState.get(), 1);
-            --_pushedValues;
             return retValue;
         }
         
@@ -100,7 +99,7 @@ namespace lua {
             checkStack();
             _key.push(_luaState.get());
             stack::push(_luaState.get(), value);
-            lua_settable(_luaState.get(), -4);
+            lua_settable(_luaState.get(), -3);
         }
 
         // other functions

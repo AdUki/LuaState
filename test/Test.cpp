@@ -11,6 +11,7 @@
     } \
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
     // State creation doString and loadFile
@@ -34,8 +35,9 @@ int main(int argc, char** argv)
         printf("OK\n");
     }
     
-    check(state["a"], 5);
+    //////////////////////////////////////////////////////////////////////////////////////////////////
     
+    check(state["a"], 5);
     
     state.doString("a = 'ahoj'");
     std::string text = state["a"];
@@ -50,6 +52,9 @@ int main(int argc, char** argv)
     bool boolValue = state["a"];
     check(boolValue, true);
 
+    state.doString("a = false");
+    boolValue = state["a"];
+    check(boolValue, false);
 
     state.doString("tab = { a = 1; b = '2'; ct = { 10, 20, 30 } }");
     check(state["tab"]["a"], 1);
@@ -57,6 +62,8 @@ int main(int argc, char** argv)
     check(state["tab"]["ct"][1], 10);
     check(state["tab"]["ct"][2], 20);
     check(state["tab"]["ct"][3], 30);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
     
     {
         lua::Value table = state["tab"]["ct"];
@@ -86,6 +93,8 @@ int main(int argc, char** argv)
     int intValue = state["tab"]["ct"][2];
     check(intValue, 20);
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
     state.doString("function setGlobalTest(name, value) testGlobal = 666 end");
     state["setGlobalTest"]();
     check(state["testGlobal"], 666);
@@ -113,10 +122,12 @@ int main(int argc, char** argv)
     float floatValue;
     lua::tie(doubleValue, intValue, boolValue, floatValue) = state["multiRet"]();
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
     state["tab"]["a"] = 33;
     intValue = state["tab"]["a"];
     check(state["tab"]["a"], 33);
-
+    
     state["tab"][10] = 44;
     state["tab"][10] = 55;
     intValue = state["tab"][10];
@@ -127,6 +138,20 @@ int main(int argc, char** argv)
     text = cText;
     check(text, "text");
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    state.doString("nested = { { { { 'Insane in the middle brain!' } } } }");
+    
+    state["nested"][1][1][1][1] = "OK";
+    check(state["nested"][1][1][1][1], "OK");
+    
+    state["nested"][1][1][2] = "OK";
+    check(state["nested"][1][1][2], "OK");
+    
+    state["nested"][1][1]["a"] = "OK";
+    check(state["nested"][1][1]["a"], "OK");
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
     
     check(state.flushStack(), 0);
     return 0;

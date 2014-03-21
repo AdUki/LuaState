@@ -27,8 +27,10 @@ namespace lua {
         , _executed(false) {}
         
         ~Function() {
-            if (!_executed)
+            if (!_executed) {
+                printf("  function call\n");
                 lua_call(_luaState.get(), _numArgs, 0);
+            }
         }
         
         // operator overloads
@@ -36,6 +38,7 @@ namespace lua {
         
         template<typename T>
         operator T() const {
+            printf("  function call\n");
             lua_call(_luaState.get(), _numArgs, 1);
             _executed = true;
             
