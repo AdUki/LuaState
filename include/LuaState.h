@@ -7,7 +7,7 @@
 
 #include "./LuaException.h"
 #include "./LuaValue.h"
-#include "./LuaTable.h"
+#include "./LuaReturn.h"
 
 namespace lua {
     
