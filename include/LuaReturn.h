@@ -13,7 +13,7 @@
 namespace lua {
     
 	template <typename... Ts>
-	class Table
+	class Return
     {
 	    std::tuple<Ts&...> _tuple;
         
@@ -22,7 +22,7 @@ namespace lua {
         // constructors
         //////////////////////////////////////////////////////////////////////////////////////////////////
         
-	    Table(Ts&... args)
+	    Return(Ts&... args)
         : _tuple(args...) {}
         
         // operator overloads
@@ -39,7 +39,7 @@ namespace lua {
 	};
     
     template <typename... Ts>
-    Table<Ts&...> tie(Ts&... args) {
-        return Table<Ts&...>(args...);
+    Return<Ts&...> tie(Ts&... args) {
+        return Return<Ts&...>(args...);
     }
 }
