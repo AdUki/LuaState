@@ -64,3 +64,17 @@ state["newTable"][1] = "a";
 state["newTable"][2] = "b";
 state["newTable"][3] = "c";
 ```
+
+### Setting funcitons
+
+You can bind C functions, lambdas and std::functions with bind. These instances are managed by Lua garbage collector and will be destroyed when you will lost last reference in Lua state to them.
+
+```cpp
+void sayHello() { printf("Hello!\n"); }
+state["cfunction"] = &sayHello;
+state["cfunction"](); // Hello!
+
+int value = 20;
+state["lambda"] = [value](int a, int b) -> int { return (a*b)/value; }
+int result = state["lambda"](12, 5); // result = 3
+```
