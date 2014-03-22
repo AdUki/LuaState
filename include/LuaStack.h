@@ -14,9 +14,9 @@
 
 namespace lua { namespace stack {
     
-    int functor_dispatcher(lua_State* luaState);
+    inline int functor_dispatcher(lua_State* luaState);
     
-    void dump (lua_State *L) {
+    inline void dump (lua_State *L) {
         int i;
         int top = lua_gettop(L);
         for (i = 1; i <= top; i++) {  /* repeat for each level */
