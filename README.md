@@ -65,7 +65,7 @@ state["newTable"][2] = "b";
 state["newTable"][3] = "c";
 ```
 
-### Setting funcitons
+### Setting functions
 
 You can bind C functions, lambdas and std::functions with bind. These instances are managed by Lua garbage collector and will be destroyed when you will lost last reference in Lua state to them.
 
@@ -77,4 +77,17 @@ state["cfunction"](); // Hello!
 int value = 20;
 state["lambda"] = [value](int a, int b) -> int { return (a*b)/value; }
 int result = state["lambda"](12, 5); // result = 3
+```
+
+You can easily register your classes functions with this pointer passing to lambda capture or bind...
+```cpp
+struct Foo {
+	int a; int b;
+    
+	void setB(int value) { b = value; }
+	Foo(lua::State& state) {
+        state["Foo_setA"] = [this](int value) { a = value; };
+		state["Foo_setB"] = std::function<void(int)>(std::bind(&Foo::setB, this, _1));
+	}
+};
 ```
