@@ -10,9 +10,9 @@
 
 #include <tuple>
 #include <cstring>
+
 #include "./LuaStack.h"
 #include "./LuaFunctor.h"
-#include "./LuaPrimitives.h"
 #include "./LuaFunction.h"
 
 namespace lua {
@@ -72,6 +72,7 @@ namespace lua {
         Function operator()() const {
             checkStack();
             _pushedValues -= 1;
+            
             return Function(_luaState, 0);
         }
         
@@ -79,6 +80,7 @@ namespace lua {
         Function operator()(Ts... args) const {
             checkStack();
             _pushedValues -= 1;
+            
             stack::push(_luaState.get(), args...);
             return Function(_luaState, sizeof...(args));
         }
@@ -86,9 +88,10 @@ namespace lua {
         template<typename T>
         operator T() const {
             checkStack();
+            _pushedValues -= 2;
+            
             auto retValue = stack::read<T>(_luaState.get(), -1);
             stack::pop(_luaState.get(), 2);
-            _pushedValues -= 2;
             return retValue;
         }
         

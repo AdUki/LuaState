@@ -13,11 +13,24 @@
 
 #include <iostream>
 
+using namespace std::placeholders;
+
 const char* sayHello()
 {
     printf("Hello!\n");
     return "Hello return\n";
 }
+
+struct Foo {
+    int a; int b;
+    
+	void setB(int value) { b = value; }
+	Foo(lua::State& state) {
+        
+        state["Foo_setA"] = [this](int value) { a = value; };
+		state["Foo_setB"] = std::function<void(int)>(std::bind(&Foo::setB, this, _1));
+	}
+};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
@@ -49,7 +62,7 @@ int main(int argc, char** argv)
     std::string text = state["a"];
     check(text, "ahoj");
     check(state["a"], "ahoj");
-    check(state["a"], text);
+    check(state["a"], text.c_str());
     const char* cText = state["a"];
     check(strcmp(cText, "ahoj"), 0);
 
@@ -116,7 +129,7 @@ int main(int argc, char** argv)
     state.doString("function logicOr(a,b) return a or b end");
     boolValue = state["logicOr"](true,false);
     check(boolValue, true);
-
+    
     state.doString("function cat(a,b) return a .. b end");
     cText = state["cat"]("aa","bb");
 //    text = state["cat"]("aa","bb");
@@ -187,6 +200,12 @@ int main(int argc, char** argv)
     check(state["a"], 12);
     intValue = state["lambda"](2, 7);
     check(intValue, 9);
+    
+    Foo foo(state);
+    state["Foo_setA"](10);
+    state["Foo_setB"](20);
+    check(foo.a, 10);
+    check(foo.b, 20);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

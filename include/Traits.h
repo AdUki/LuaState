@@ -9,26 +9,26 @@
 #pragma once
 
 namespace lua {
-
+    
     template <typename T>
-    struct lambda_traits : public lambda_traits<decltype(&T::operator())> {};
+    struct function_traits
+    : public function_traits<decltype(&T::operator())>
+    {};
+    
+    template <typename ClassType, typename ReturnType, typename... Args>
+    struct function_traits<ReturnType(ClassType::*)(Args...) const>
+    {
+        enum { arity = sizeof...(Args) };
+        
+        typedef ReturnType ResultType;
+        typedef std::function<ReturnType(Args...)> Function;
+        
+        template <size_t i>
+        struct Arg {
+            typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
+        };
+    };
 
-    template <typename T, typename Ret, typename ... Args>
-    struct lambda_traits<Ret(T::*)(Args...) const> {
-        typedef std::function<Ret(Args...)> Fun;
-    };
-    
-    template<int ...>
-    struct seq { };
-    
-    template<int N, int ...S>
-    struct gens : gens<N-1, N-1, S...> { };
-    
-    template<int ...S>
-    struct gens<0, S...> {
-        typedef seq<S...> type;
-    };
-    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     template<int...> struct index_tuple{};

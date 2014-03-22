@@ -28,14 +28,13 @@ namespace lua {
         
         ~Function() {
             if (!_executed) {
-                printf("  function call\n");
                 lua_call(_luaState.get(), _numArgs, 0);
             }
         }
         
         // operator overloads
         //////////////////////////////////////////////////////////////////////////////////////////////////
-        
+
         template<typename T>
         operator T() const {
             lua_call(_luaState.get(), _numArgs, 1);

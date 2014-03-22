@@ -66,7 +66,6 @@ namespace lua {
             luaL_getmetatable(luaState, "luaL_Functor");
             lua_setmetatable(luaState, -2);
         }
-
         
         template <typename Ret, typename ... Args>
         void push(lua_State* luaState, std::function<Ret(Args...)> function) {
@@ -76,11 +75,11 @@ namespace lua {
             luaL_getmetatable(luaState, "luaL_Functor");
             lua_setmetatable(luaState, -2);
         }
-        
+                
         template<typename T>
-        inline void push(lua_State* luaState, T lambda)
+        inline void push(lua_State* luaState, T function)
         {
-            push(luaState, (typename lambda_traits<T>::Fun)(lambda));
+            push(luaState, (typename function_traits<T>::Function)(function));
         }
     }
 }
