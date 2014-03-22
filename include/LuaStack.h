@@ -14,6 +14,37 @@
 
 namespace lua { namespace stack {
     
+    int functor_dispatcher(lua_State* luaState);
+    
+    void dump (lua_State *L) {
+        int i;
+        int top = lua_gettop(L);
+        for (i = 1; i <= top; i++) {  /* repeat for each level */
+            int t = lua_type(L, i);
+            switch (t) {
+                    
+                case LUA_TSTRING:  /* strings */
+                    printf("`%s'", lua_tostring(L, i));
+                    break;
+                    
+                case LUA_TBOOLEAN:  /* booleans */
+                    printf(lua_toboolean(L, i) ? "true" : "false");
+                    break;
+                    
+                case LUA_TNUMBER:  /* numbers */
+                    printf("%g", lua_tonumber(L, i));
+                    break;
+                    
+                default:  /* other values */
+                    printf("%s", lua_typename(L, t));
+                    break;
+                    
+            }
+            printf("  ");  /* put a separator */
+        }
+        printf("\n");  /* end the listing */
+    }
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     template <std::size_t... Is>
@@ -38,7 +69,7 @@ namespace lua { namespace stack {
     template<typename T>
     inline void push(lua_State* luaState, T value);
     
-    template<typename T, typename... Ts>
+    template<typename T, typename ... Ts>
     inline void push(lua_State* luaState, const T value, const Ts... values) {
         push(luaState, value);
         push(luaState, values...);
@@ -82,7 +113,7 @@ namespace lua { namespace stack {
 
     template<>
     inline void push(lua_State* luaState, float value) {
-        push<LuaType::Number>(luaState, value);
+        push<LuaType::Number>(luaState, static_cast<LuaType::Number>(value));
     }
     
     template<>
@@ -151,24 +182,25 @@ namespace lua { namespace stack {
         return value;
     }
     
-    template<std::size_t I, typename... Ts>
+    template<std::size_t I, typename ... Ts>
     class Pop {
 
         template<std::size_t... Is>
-        static std::tuple<Ts...> create(lua_State* luaState, Indexes<Is...>) {
-            return std::make_tuple(read<Ts>(luaState, Is + 2)...);
+        static std::tuple<Ts...> create(lua_State* luaState, int offset, Indexes<Is...>) {
+            return std::make_tuple(read<Ts>(luaState, Is + offset)...);
         }
         
     public:
-        static std::tuple<Ts...> getTable(lua_State* luaState) {
-            return create(luaState, typename IndexesBuilder<I>::index());
+        static std::tuple<Ts...> getTable(lua_State* luaState, int offset) {
+            return create(luaState, offset, typename IndexesBuilder<I>::index());
         }
     };
     
-    template<typename... Ts>
-    inline std::tuple<Ts...> pop(lua_State* luaState) {
+    template<typename ... Ts>
+    inline std::tuple<Ts...> get_and_pop(lua_State* luaState) {
         constexpr size_t num = sizeof...(Ts);
-        auto value = Pop<num, Ts...>::getTable(luaState);
+        int offset = numberOfPushedValues(luaState) - num + 1;
+        auto value = Pop<num, Ts...>::getTable(luaState, offset);
         stack::pop(luaState, num);
         return value;
     }

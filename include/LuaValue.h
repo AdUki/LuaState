@@ -11,6 +11,7 @@
 #include <tuple>
 #include <cstring>
 #include "./LuaStack.h"
+#include "./LuaFunctor.h"
 #include "./LuaPrimitives.h"
 #include "./LuaFunction.h"
 
@@ -74,7 +75,7 @@ namespace lua {
             return Function(_luaState, 0);
         }
         
-        template<typename... Ts>
+        template<typename ... Ts>
         Function operator()(Ts... args) const {
             checkStack();
             _pushedValues -= 1;
@@ -108,7 +109,25 @@ namespace lua {
             }
             _pushedValues -= 2;
         }
-
+        
+//        template<typename T>
+//        void bind(const T& value) const {
+//            checkStack();
+//            
+//            stack::pop(_luaState.get(), 1);
+//            
+//            if (_pushedValues == 2) {
+//                LuaType::String name = stack::pop_front<LuaType::String>(_luaState.get());
+//                stack::push_lambda(_luaState.get(), value);
+//                lua_setglobal(_luaState.get(), name);
+//            }
+//            else {
+//                stack::push_lambda(_luaState.get(), value);
+//                lua_settable(_luaState.get(), -3);
+//            }
+//            _pushedValues -= 2;
+//        }
+        
         // other functions
         //////////////////////////////////////////////////////////////////////////////////////////////////
         

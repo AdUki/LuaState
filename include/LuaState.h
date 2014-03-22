@@ -21,9 +21,29 @@ namespace lua {
         
         State() {
             lua_State* luaState = luaL_newstate();
-            luaL_openlibs(luaState);
             assert(luaState != NULL);
             
+            luaL_openlibs(luaState);
+            luaL_newmetatable(luaState, "luaL_Functor");
+            
+            // Set up metatable for functors
+            lua_pushcfunction(luaState, [](lua_State* luaState) -> int {
+                BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
+                return functor->call(luaState);
+            });
+            lua_setfield(luaState, -2, "__call");
+            
+            // Set up metatable for functors
+            lua_pushcfunction(luaState, [](lua_State* luaState) -> int {
+                BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
+                delete functor;
+                return 0;
+            });
+            lua_setfield(luaState, -2, "__gc");
+            
+            lua_pop(luaState, 1);
+            
+            // Set up destructor for lua state
             _luaState = std::shared_ptr<lua_State>(luaState, std::bind(&lua_close, luaState));
         }
         
@@ -72,5 +92,6 @@ namespace lua {
             return count;
         }
         
+        std::shared_ptr<lua_State> getState() { return _luaState; }
     };
 }

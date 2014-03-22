@@ -49,13 +49,14 @@ namespace lua {
         // other functions
         //////////////////////////////////////////////////////////////////////////////////////////////////
 
-        template <typename... Ret>
+        template <typename ... Ret>
         std::tuple<Ret...> call() const {
             _executed = true;
             constexpr size_t numRet = sizeof...(Ret);
             
             lua_call(_luaState.get(), _numArgs, numRet);
-            auto returnValue = stack::pop<Ret...>(_luaState.get());
+            stack::dump(_luaState.get());
+            auto returnValue = stack::get_and_pop<Ret...>(_luaState.get());
             
             return returnValue;
         }

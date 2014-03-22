@@ -11,13 +11,21 @@
     } \
 }
 
+#include <iostream>
+
+const char* sayHello()
+{
+    printf("Hello!\n");
+    return "Hello return\n";
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
     // State creation doString and loadFile
     lua::State state;
     state.doString("a = 5");
-    printf("OK\n");
+    check(state["a"], 5);
     
     try {
         state.doString("a()");
@@ -36,8 +44,6 @@ int main(int argc, char** argv)
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
-    
-    check(state["a"], 5);
     
     state.doString("a = 'ahoj'");
     std::string text = state["a"];
@@ -164,6 +170,23 @@ int main(int argc, char** argv)
     state["newTable"] = lua::Table();
     state["newTable"][1] = 5;
     check(state["newTable"][1], 5);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    bool flag = false;
+    state["lambda"] = [&flag]() { flag = true; };
+    state.doString("lambda()");
+    check(flag, true);
+    
+    state["lambda"] = &sayHello;
+    const char* msg = state["lambda"]();
+    check(strcmp(msg, sayHello()), 0);
+    
+    state["lambda"] = [](int a, int b) -> int { return a + b; };
+    state.doString("a = lambda(4, 8)");
+    check(state["a"], 12);
+    intValue = state["lambda"](2, 7);
+    check(intValue, 9);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

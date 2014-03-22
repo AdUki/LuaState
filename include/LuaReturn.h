@@ -12,7 +12,7 @@
 
 namespace lua {
     
-	template <typename... Ts>
+	template <typename ... Ts>
 	class Return
     {
 	    std::tuple<Ts&...> _tuple;
@@ -38,7 +38,7 @@ namespace lua {
         // none
 	};
     
-    template <typename... Ts>
+    template <typename ... Ts>
     Return<Ts&...> tie(Ts&... args) {
         return Return<Ts&...>(args...);
     }
