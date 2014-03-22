@@ -10,7 +10,8 @@ set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11")
 # Must be executed BEFORE add_executable!
 macro(add_folder FOLDER)
 	file(GLOB SOURCE_GROUP ${FOLDER}/*.c ${FOLDER}/*.h ${FOLDER}/*.cpp ${FOLDER}/*.hpp)
-	source_group(${FOLDER} FILES ${SOURCE_GROUP})
+	string(REGEX REPLACE "/" "\\\\\\\\" SOURCE_GROUP_NAME ${FOLDER})
+	source_group(${SOURCE_GROUP_NAME} FILES ${SOURCE_GROUP})
 	set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE_GROUP})
 endmacro()
 
