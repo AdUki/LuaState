@@ -21,7 +21,6 @@ namespace lua {
         inline void callFunction(int numRet) const {
             _executed = true;
             if (_protectedCall) {
-                printf("pcall\n");
                 if (lua_pcall(_luaState.get(), _numArgs, numRet, 0)) {
                     const char* error = lua_tostring(_luaState.get(), -1);
                     lua_pop(_luaState.get(), 1);
@@ -29,7 +28,6 @@ namespace lua {
                 }
             }
             else {
-                printf("call\n");
                 lua_call(_luaState.get(), _numArgs, numRet);
             }
         }
