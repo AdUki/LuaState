@@ -201,11 +201,40 @@ int main(int argc, char** argv)
     intValue = state["lambda"](2, 7);
     check(intValue, 9);
     
+    state["lambda"] = []() -> std::tuple<LuaType::Integer, LuaType::String> {
+        return std::tuple<LuaType::Integer, LuaType::String>(23, "abc");
+    };
+    
+    lua::tie(intValue,  cText) = state["lambda"]();
+    check(intValue, 23);
+    check(strcmp(cText, "abc") , 0);
+    
     Foo foo(state);
     state["Foo_setA"](10);
     state["Foo_setB"](20);
     check(foo.a, 10);
     check(foo.b, 20);
+    
+    typedef std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> FunctionTuples1;
+    state["getFncs"] = []() -> FunctionTuples1 {
+        return FunctionTuples1([] () -> int { return 100; },
+                              [] () -> int { return 200; },
+                              [] () -> int { return 300; });
+    };
+    int a, b, c;
+    typedef std::tuple<std::function<void(int)>, std::function<void(int)>, std::function<void(int)>> FunctionTuples2;
+    state["setValues"] = [&a, &b, &c]() -> FunctionTuples2 {
+        return FunctionTuples2([&] (int value) { a = value; },
+                               [&] (int value) { b = value; },
+                               [&] (int value) { c = value; });
+    };
+    
+    state.doString("fnc1, fnc2, fnc3 = getFncs()"
+                   "setA, setB, setC = setValues()"
+                   "setA(fnc1()); setB(fnc2()); setC(fnc3())");
+    check(a, 100);
+    check(b, 200);
+    check(c, 300);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

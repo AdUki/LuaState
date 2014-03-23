@@ -52,6 +52,8 @@ namespace lua {
     struct make_indexes : make_indexes_impl<0, index_tuple<>, Types...>
     {};
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
     template<class Ret, class... Args, int... Indexes >
     Ret apply_helper(std::function<Ret(Args...)> pf, index_tuple< Indexes... >, std::tuple<Args...>&& tup)
     {
@@ -69,4 +71,29 @@ namespace lua {
     {
         return apply_helper(pf, typename make_indexes<Args...>::type(), std::forward<std::tuple<Args...>>(tup));
     }
+    
+    template<class ... Args>
+    void apply(std::function<void(Args...)> pf, const std::tuple<Args...>&  tup)
+    {
+        apply_helper(pf, typename make_indexes<Args...>::type(), std::tuple<Args...>(tup));
+    }
+    
+    template<class ... Args>
+    void apply(std::function<void(Args...)> pf, std::tuple<Args...>&&  tup)
+    {
+        apply_helper(pf, typename make_indexes<Args...>::type(), std::forward<std::tuple<Args...>>(tup));
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    template <std::size_t... Is>
+    struct Indexes {};
+    
+    template <std::size_t N, std::size_t... Is>
+    struct IndexesBuilder : IndexesBuilder<N-1, N-1, Is...> {};
+    
+    template <std::size_t... Is>
+    struct IndexesBuilder<0, Is...> {
+        using index = Indexes<Is...>;
+    };
 }

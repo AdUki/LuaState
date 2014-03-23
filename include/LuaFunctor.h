@@ -37,8 +37,7 @@ namespace lua {
         
         int call(lua_State* luaState) {
             Ret value = apply(function, stack::get_and_pop<Args...>(luaState));
-            stack::push(luaState, value);
-            return 1; // TODO: enable return tuple and push more values
+            return stack::push(luaState, value);
         }
     };
     
@@ -59,27 +58,31 @@ namespace lua {
     namespace stack {
         
         template <typename Ret, typename ... Args>
-        void push(lua_State* luaState, Ret(*function)(Args...)) {
+        inline int push(lua_State* luaState, Ret(*function)(Args...)) {
             BaseFunctor** udata = (BaseFunctor **)lua_newuserdata(luaState, sizeof(BaseFunctor *));
             *udata = new Functor<Ret, Args...>(luaState, function);
             
             luaL_getmetatable(luaState, "luaL_Functor");
             lua_setmetatable(luaState, -2);
+            return 1;
         }
         
         template <typename Ret, typename ... Args>
-        void push(lua_State* luaState, std::function<Ret(Args...)> function) {
+        inline int push(lua_State* luaState, std::function<Ret(Args...)> function) {
             BaseFunctor** udata = (BaseFunctor **)lua_newuserdata(luaState, sizeof(BaseFunctor *));
             *udata = new Functor<Ret, Args...>(luaState, function);
             
             luaL_getmetatable(luaState, "luaL_Functor");
             lua_setmetatable(luaState, -2);
+            return 1;
         }
-                
+        
         template<typename T>
-        inline void push(lua_State* luaState, T function)
+        inline int push(lua_State* luaState, T function)
         {
             push(luaState, (typename function_traits<T>::Function)(function));
+            return 1;
         }
+        
     }
 }

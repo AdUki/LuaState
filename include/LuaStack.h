@@ -9,12 +9,12 @@
 #pragma once
 
 #include <lua.hpp>
+#include <tuple>
 
+#include "./Traits.h"
 #include "./LuaPrimitives.h"
 
 namespace lua { namespace stack {
-    
-    inline int functor_dispatcher(lua_State* luaState);
     
     inline void dump (lua_State *L) {
         int i;
@@ -47,19 +47,6 @@ namespace lua { namespace stack {
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
-    template <std::size_t... Is>
-    struct Indexes {};
-    
-    template <std::size_t N, std::size_t... Is>
-    struct IndexesBuilder : IndexesBuilder<N-1, N-1, Is...> {};
-    
-    template <std::size_t... Is>
-    struct IndexesBuilder<0, Is...> {
-        using index = Indexes<Is...>;
-    };
-    
-    //////////////////////////////////////////////////////////////////////////////////////////////////
-    
     inline int numberOfPushedValues(lua_State* luaState) {
         return lua_gettop(luaState);
     }
@@ -67,58 +54,102 @@ namespace lua { namespace stack {
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     template<typename T>
-    inline void push(lua_State* luaState, T value);
+    inline int push(lua_State* luaState, T value);
     
     template<typename T, typename ... Ts>
-    inline void push(lua_State* luaState, const T value, const Ts... values) {
+    inline int push(lua_State* luaState, const T value, const Ts... values) {
         push(luaState, value);
         push(luaState, values...);
+        return sizeof...(Ts) + 1;
     }
 
     template<>
-    inline void push(lua_State* luaState, int value) {
+    inline int push(lua_State* luaState, int value) {
         printf("  PUSH  %d\n", value);
         lua_pushinteger(luaState, value);
+        return 1;
     }
 
     template<>
-    inline void push(lua_State* luaState, LuaType::String value) {
+    inline int push(lua_State* luaState, LuaType::String value) {
         printf("  PUSH  %s\n", value);
         lua_pushstring(luaState, value);
+        return 1;
     }
 
     template<>
-    inline void push(lua_State* luaState, LuaType::Number value) {
+    inline int push(lua_State* luaState, LuaType::Number value) {
         printf("  PUSH  %lf\n", value);
         lua_pushnumber(luaState, value);
+        return 1;
     }
 
     template<>
-    inline void push(lua_State* luaState, LuaType::Boolean value) {
+    inline int push(lua_State* luaState, LuaType::Boolean value) {
         printf("  PUSH  %s\n", value ? "true" : "false");
         lua_pushboolean(luaState, value);
+        return 1;
     }
 
     template<>
-    inline void push(lua_State* luaState, LuaType::Null value) {
+    inline int push(lua_State* luaState, LuaType::Null value) {
         printf("  PUSH  null\n");
         lua_pushnil(luaState);
+        return 1;
     }
     
     template<>
-    inline void push(lua_State* luaState, Table value) {
+    inline int push(lua_State* luaState, Table value) {
         printf("  PUSH  newTable\n");
         lua_newtable(luaState);
+        return 1;
     }
 
     template<>
-    inline void push(lua_State* luaState, float value) {
+    inline int push(lua_State* luaState, float value) {
         push<LuaType::Number>(luaState, static_cast<LuaType::Number>(value));
+        return 1;
     }
     
     template<>
-    inline void push(lua_State* luaState, const std::string& value) {
+    inline int push(lua_State* luaState, const std::string& value) {
         push<LuaType::String>(luaState, value.c_str());
+        return 1;
+    }
+
+    template<typename T>
+    void push_helper(lua_State* luaState, const T& value)
+    {
+        int index = lua_tointeger(luaState, -1);
+        push(luaState, value);
+        lua_settable(luaState, -3);
+        lua_pushinteger(luaState, ++index);
+    }
+    
+    template<typename T, typename ... Ts>
+    void push_helper(lua_State* luaState, const T value, const Ts... values)
+    {
+        push_helper(luaState, value);
+        push_helper(luaState, values...);
+    }
+    
+    template<typename ... Args, int ... Indexes>
+    void push_helper(lua_State* luaState, index_tuple< Indexes... >, const std::tuple<Args...>& tup)
+    {
+        push(luaState, std::get<Indexes>(tup)...);
+//        lua_newtable(luaState);
+//        lua_pushinteger(luaState, 1);
+//        push_helper(luaState, std::get<Indexes>(tup)... );
+//        lua_pop(luaState, 1);
+    }
+    
+    template<typename ... Args>
+    inline int push(lua_State* luaState, const std::tuple<Args...>& tuple)
+    {
+        stack::dump(luaState);
+        push_helper(luaState, typename make_indexes<Args...>::type(), tuple);
+        stack::dump(luaState);
+        return sizeof...(Args);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
