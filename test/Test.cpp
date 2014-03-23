@@ -24,6 +24,7 @@ struct Foo {
     int a; int b;
     
 	void setB(int value) { b = value; }
+    
 	Foo(lua::State& state) {
         
         state["Foo_setA"] = [this](int value) { a = value; };
@@ -200,8 +201,8 @@ int main(int argc, char** argv)
     intValue = state["lambda"](2, 7);
     check(intValue, 9);
     
-    state["lambda"] = []() -> std::tuple<LuaType::Integer, LuaType::String> {
-        return std::tuple<LuaType::Integer, LuaType::String>(23, "abc");
+    state["lambda"] = []() -> std::tuple<lua::Integer, lua::String> {
+        return std::tuple<lua::Integer, lua::String>(23, "abc");
     };
     
     lua::tie(intValue,  cText) = state["lambda"]();
@@ -255,6 +256,19 @@ int main(int argc, char** argv)
         flag = true;
     }
     check(flag, true);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    Foo* fooPtr = new Foo(state);
+    fooPtr->a = 13;
+    state["fooPtr"].setPointer(fooPtr);
+    fooPtr = state["fooPtr"].getPointer<Foo>();
+    check(fooPtr->a, 13);
+    
+    fooPtr->b = 22;
+    state["fooPtr"] = static_cast<lua::Pointer>(fooPtr);
+    fooPtr = static_cast<Foo*>(lua::Pointer(state["fooPtr"]));
+    check(fooPtr->b, 22);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

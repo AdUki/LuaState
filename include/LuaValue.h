@@ -113,7 +113,7 @@ namespace lua {
             stack::pop(_luaState.get(), 1);
             
             if (_pushedValues == 2) {
-                LuaType::String name = stack::pop_front<LuaType::String>(_luaState.get());
+                lua::String name = stack::pop_front<lua::String>(_luaState.get());
                 stack::push(_luaState.get(), value);
                 lua_setglobal(_luaState.get(), name);
             }
@@ -126,6 +126,16 @@ namespace lua {
         
         // other functions
         //////////////////////////////////////////////////////////////////////////////////////////////////
+
+        template <typename T>
+        void setPointer(T* pointer) {
+            operator=(static_cast<void*>(pointer));
+        }
+        
+        template <typename T>
+        T* getPointer() {
+            return static_cast<T*>(Pointer(*this));
+        }
         
     };
     

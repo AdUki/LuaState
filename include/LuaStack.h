@@ -74,30 +74,37 @@ namespace lua { namespace stack {
     }
 
     template<>
-    inline int push(lua_State* luaState, LuaType::String value) {
+    inline int push(lua_State* luaState, lua::String value) {
         LUASTATE_DEBUG_LOG("  PUSH  %s\n", value);
         lua_pushstring(luaState, value);
         return 1;
     }
 
     template<>
-    inline int push(lua_State* luaState, LuaType::Number value) {
+    inline int push(lua_State* luaState, lua::Number value) {
         LUASTATE_DEBUG_LOG("  PUSH  %lf\n", value);
         lua_pushnumber(luaState, value);
         return 1;
     }
 
     template<>
-    inline int push(lua_State* luaState, LuaType::Boolean value) {
+    inline int push(lua_State* luaState, lua::Boolean value) {
         LUASTATE_DEBUG_LOG("  PUSH  %s\n", value ? "true" : "false");
         lua_pushboolean(luaState, value);
         return 1;
     }
 
     template<>
-    inline int push(lua_State* luaState, LuaType::Null value) {
+    inline int push(lua_State* luaState, lua::Null value) {
         LUASTATE_DEBUG_LOG("  PUSH  null\n");
         lua_pushnil(luaState);
+        return 1;
+    }
+    
+    template<>
+    inline int push(lua_State* luaState, lua::Pointer value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %p\n", value);
+        lua_pushlightuserdata(luaState, value);
         return 1;
     }
     
@@ -110,13 +117,13 @@ namespace lua { namespace stack {
 
     template<>
     inline int push(lua_State* luaState, float value) {
-        push<LuaType::Number>(luaState, static_cast<LuaType::Number>(value));
+        push<lua::Number>(luaState, static_cast<lua::Number>(value));
         return 1;
     }
     
     template<>
     inline int push(lua_State* luaState, const std::string& value) {
-        push<LuaType::String>(luaState, value.c_str());
+        push<lua::String>(luaState, value.c_str());
         return 1;
     }
 
@@ -139,38 +146,43 @@ namespace lua { namespace stack {
     inline T read(lua_State* luaState, int index);
 
     template<>
-    inline LuaType::Integer read(lua_State* luaState, int index) {
+    inline lua::Integer read(lua_State* luaState, int index) {
         return lua_tointeger(luaState, index);
     }
 
     template<>
-    inline LuaType::String read(lua_State* luaState, int index) {
+    inline lua::String read(lua_State* luaState, int index) {
         return lua_tostring(luaState, index);;
     }
 
     template<>
-    inline LuaType::Number read(lua_State* luaState, int index) {
+    inline lua::Number read(lua_State* luaState, int index) {
         return lua_tonumber(luaState, index);
     }
 
     template<>
-    inline LuaType::Boolean read(lua_State* luaState, int index) {
+    inline lua::Boolean read(lua_State* luaState, int index) {
         return lua_toboolean(luaState, index);
     }
 
     template<>
-    inline LuaType::Null read(lua_State* luaState, int index) {
+    inline lua::Null read(lua_State* luaState, int index) {
         return nullptr;
+    }
+    
+    template<>
+    inline lua::Pointer read(lua_State* luaState, int index) {
+        return lua_touserdata(luaState, index);
     }
 
     template<>
     inline float read(lua_State* luaState, int index) {
-        return read<LuaType::Number>(luaState, index);
+        return read<lua::Number>(luaState, index);
     }
     
     template<>
     inline std::string read(lua_State* luaState, int index) {
-        return read<LuaType::String>(luaState, index);
+        return read<lua::String>(luaState, index);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
