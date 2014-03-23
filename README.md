@@ -96,7 +96,7 @@ state.doString("fnc1, fnc2, fnc3 = getFncs()"
                "print(fnc1(), fnc2(), fnc3())"); // 100 200 300
 ```
 
-You can easily register your classes functions with this pointer passing to lambda capture or bind...
+You can easily register your classes functions with `this` pointer passing to lambda capture or bind...
 ```cpp
 struct Foo {
 	int a; int b;
