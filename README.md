@@ -45,8 +45,12 @@ state["setFoo"]()
 std::string text = state["getFoo"]()
 
 state.doString("function add(x, y) return x + y end");
-
 int result = state["add"](1,2);
+
+state.doString("function iWantMore() return 20, 13.8, 'MORE' end");
+float number;
+std::string text;
+lua::tie(result, number, text) = state["iWantMore"]();
 ```
 
 ### Setting values
@@ -67,7 +71,7 @@ state["newTable"][3] = "c";
 
 ### Setting functions
 
-You can bind C functions, lambdas and std::functions with bind. These instances are managed by Lua garbage collector and will be destroyed when you will lost last reference in Lua state to them.
+You can bind C functions, lambdas and std::functions with bind. These instances are managed by Lua garbage collector and will be destroyed when you will lost last reference in Lua state to them. 
 
 ```cpp
 void sayHello() { printf("Hello!\n"); }
@@ -79,6 +83,19 @@ state["lambda"] = [value](int a, int b) -> int { return (a*b)/value; }
 int result = state["lambda"](12, 5); // result = 3
 ```
 
+They can return one or more values with use of std::tuple. For example, when you want to register more functions, you can return bundled in tuple...
+
+```cpp
+typedef std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> FunctionTuples;
+state["getFncs"] = []() -> FunctionTuples {
+    return FunctionTuples1([] () -> int { return 100; },
+                           [] () -> int { return 200; },
+                           [] () -> int { return 300; });
+};
+state.doString("fnc1, fnc2, fnc3 = getFncs()"
+               "print(fnc1(), fnc2(), fnc3())"); // 100 200 300
+```
+
 You can easily register your classes functions with this pointer passing to lambda capture or bind...
 ```cpp
 struct Foo {
@@ -87,7 +104,7 @@ struct Foo {
 	void setB(int value) { b = value; }
 	Foo(lua::State& state) {
         state["Foo_setA"] = [this](int value) { a = value; };
-		state["Foo_setB"] = std::function<void(int)>(std::bind(&Foo::setB, this, _1));
+	state["Foo_setB"] = std::function<void(int)>(std::bind(&Foo::setB, this, _1));
 	}
 };
 ```
