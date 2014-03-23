@@ -8,6 +8,7 @@ Lightweight Lua51 binding library for C++11.
 Just create lua::State variable, which will initialize lus_State and loads up standard libraries. It will close state automatically in destructor.
 
 ``` cpp
+#include <luastate.h>
 int main() {
    lua::State state;
 	state.doString("print 'Hello world!'");
