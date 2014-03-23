@@ -53,6 +53,8 @@ namespace lua { namespace stack {
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
+
+    inline int push(lua_State* luaState) { return 0; }
     
     template<typename T>
     inline int push(lua_State* luaState, T value);

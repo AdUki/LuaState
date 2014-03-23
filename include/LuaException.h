@@ -27,6 +27,22 @@ namespace lua {
             return _message.c_str();
         }
     };
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Don't forget to call execute manualy while using protected call! Exceptions cannot be catched while throwed in destructor...
+    class RuntimeError: public std::exception
+    {
+        std::string _message;
+        
+    public:
+        RuntimeError(const std::string& message) : _message(message) {}
+        virtual ~RuntimeError() throw() {}
+        
+        virtual const char* what() const throw()
+        {
+            return _message.c_str();
+        }
+    };
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     class StackError: public std::exception

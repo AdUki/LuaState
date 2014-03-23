@@ -214,18 +214,22 @@ int main(int argc, char** argv)
     check(foo.a, 10);
     check(foo.b, 20);
     
-    typedef std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> FunctionTuples1;
-    state["getFncs"] = []() -> FunctionTuples1 {
-        return FunctionTuples1([] () -> int { return 100; },
-                              [] () -> int { return 200; },
-                              [] () -> int { return 300; });
+    state["getFncs"] = []()
+    -> std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> {
+        return {
+            [] () -> int { return 100; },
+            [] () -> int { return 200; },
+            [] () -> int { return 300; }
+        };
     };
     int a, b, c;
-    typedef std::tuple<std::function<void(int)>, std::function<void(int)>, std::function<void(int)>> FunctionTuples2;
-    state["setValues"] = [&a, &b, &c]() -> FunctionTuples2 {
-        return FunctionTuples2([&] (int value) { a = value; },
-                               [&] (int value) { b = value; },
-                               [&] (int value) { c = value; });
+    state["setValues"] = [&a, &b, &c]()
+    -> std::tuple<std::function<void(int)>, std::function<void(int)>, std::function<void(int)>> {
+        return {
+            [&] (int value) { a = value; },
+            [&] (int value) { b = value; },
+            [&] (int value) { c = value; }
+        };
     };
     
     state.doString("fnc1, fnc2, fnc3 = getFncs()"
@@ -237,6 +241,24 @@ int main(int argc, char** argv)
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
+    state["goodFnc"] = [](){ };
+    state["goodFnc"]();
+    state["goodFnc"].call();
+    state["goodFnc"].protectedCall();
+    
+    flag = false;
+    state.doString("badFnc = function(a,b) local var = a .. b end");
+    try {
+        state["badFnc"].protectedCall(3).execute();
+        assert(false);
+    } catch (lua::RuntimeError ex) {
+        flag = true;
+    }
+    check(flag, true);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
     check(state.flushStack(), 0);
+    
     return 0;
 }

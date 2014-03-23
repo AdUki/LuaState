@@ -29,7 +29,7 @@ namespace lua {
         //////////////////////////////////////////////////////////////////////////////////////////////////
         
 	    void operator= (const Function& function) {
-            _tuple = function.call<typename std::remove_reference<Ts>::type...>();
+            _tuple = function.execute<typename std::remove_reference<Ts>::type...>();
 	    }
         
         // other functions

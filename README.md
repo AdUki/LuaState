@@ -86,11 +86,13 @@ int result = state["lambda"](12, 5); // result = 3
 They can return one or more values with use of std::tuple. For example, when you want to register more functions, you can return bundled in tuple...
 
 ```cpp
-typedef std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> FunctionsTuple;
-state["getFncs"] = []() -> FunctionsTuple {
-    return FunctionsTuple([] () -> int { return 100; },
-                          [] () -> int { return 200; },
-                          [] () -> int { return 300; });
+state["getFncs"] = []() 
+-> std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> {
+    return {
+    	[]() -> int { return 100; },
+		[]() -> int { return 200; },
+		[]() -> int { return 300; }
+	};
 };
 state.doString("fnc1, fnc2, fnc3 = getFncs()"
                "print(fnc1(), fnc2(), fnc3())"); // 100 200 300

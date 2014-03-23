@@ -68,13 +68,6 @@ namespace lua {
             
             return std::move(*this);
         }
-
-        Function operator()() const {
-            checkStack();
-            _pushedValues -= 1;
-            
-            return Function(_luaState, 0);
-        }
         
         template<typename ... Ts>
         Function operator()(Ts... args) const {
@@ -82,7 +75,25 @@ namespace lua {
             _pushedValues -= 1;
             
             stack::push(_luaState.get(), args...);
-            return Function(_luaState, sizeof...(args));
+            return Function(_luaState, sizeof...(args), false);
+        }
+        
+        template<typename ... Ts>
+        Function call(Ts... args) const {
+            checkStack();
+            _pushedValues -= 1;
+            
+            stack::push(_luaState.get(), args...);
+            return Function(_luaState, sizeof...(args), false);
+        }
+        
+        template<typename ... Ts>
+        Function protectedCall(Ts... args) const {
+            checkStack();
+            _pushedValues -= 1;
+            
+            stack::push(_luaState.get(), args...);
+            return Function(_luaState, sizeof...(args), true);
         }
         
         template<typename T>
