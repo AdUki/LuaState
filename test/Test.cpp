@@ -3,10 +3,10 @@
 #define check(code, result) \
 { \
     if (code == result) { \
-        printf("OK %s == %s\n", #code, #result); \
+        printf("line %d: OK %s == %s\n", __LINE__, #code, #result); \
     } \
     else { \
-        printf("FAIL %s == %s\n", #code, #result); \
+        printf("line %d: FAIL %s == %s\n", __LINE__, #code, #result); \
         assert(false); \
     } \
 }
@@ -17,7 +17,6 @@ using namespace std::placeholders;
 
 const char* sayHello()
 {
-    printf("Hello!\n");
     return "Hello return\n";
 }
 

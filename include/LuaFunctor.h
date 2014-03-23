@@ -16,11 +16,10 @@ namespace lua {
     struct BaseFunctor
     {
         BaseFunctor(lua_State* luaState, size_t size) {
-            printf("Functor %p created!\n", this);
+            LUASTATE_DEBUG_LOG("Functor %p created!\n", this);
         }
-        
         virtual ~BaseFunctor() {
-            printf("Functor %p destructed!\n", this);
+            LUASTATE_DEBUG_LOG("Functor %p destructed!\n", this);
         }
         
         virtual int call(lua_State* luaState) = 0;
@@ -36,7 +35,7 @@ namespace lua {
         }
         
         int call(lua_State* luaState) {
-            Ret value = apply(function, stack::get_and_pop<Args...>(luaState));
+            Ret value = traits::apply(function, stack::get_and_pop<Args...>(luaState));
             return stack::push(luaState, value);
         }
     };
@@ -50,7 +49,7 @@ namespace lua {
         , function(function) {}
         
         int call(lua_State* luaState) {
-            apply(function, stack::get_and_pop<Args...>(luaState));
+            traits::apply(function, stack::get_and_pop<Args...>(luaState));
             return 0;
         }
     };
@@ -80,7 +79,7 @@ namespace lua {
         template<typename T>
         inline int push(lua_State* luaState, T function)
         {
-            push(luaState, (typename function_traits<T>::Function)(function));
+            push(luaState, (typename traits::function_traits<T>::Function)(function));
             return 1;
         }
         

@@ -7,6 +7,14 @@
 
 #include <lua.hpp>
 
+//#define LUASTATE_DEBUG_MODE
+
+#ifdef LUASTATE_DEBUG_MODE
+#   define LUASTATE_DEBUG_LOG(format, ...) printf(format, ## __VA_ARGS__)
+#else
+#   define LUASTATE_DEBUG_LOG(format, ...)
+#endif
+
 #include "./LuaException.h"
 #include "./LuaValue.h"
 #include "./LuaReturn.h"
@@ -89,7 +97,7 @@ namespace lua {
         /// @returns Number of flushed items
         int flushStack() {
             int count = stack::numberOfPushedValues(_luaState.get());
-            printf("Flushed %d elements from stack\n", count);
+            LUASTATE_DEBUG_LOG("Flushed %d elements from stack\n", count);
             lua_settop(_luaState.get(), 0);
             return count;
         }
