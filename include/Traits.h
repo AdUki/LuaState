@@ -1,14 +1,16 @@
 //
-//  Lambda.h
+//  Traits.h
 //  LuaState
 //
 //  Created by Simon Mikuda on 22/03/14.
 //
-//
+//  See LICENSE and README.md files//
 
 #pragma once
 
 namespace lua { namespace traits {
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
     
     template <typename T>
     struct function_traits

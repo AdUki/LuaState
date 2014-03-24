@@ -4,7 +4,7 @@
 //
 //  Created by Simon Mikuda on 17/03/14.
 //
-//
+//  See LICENSE and README.md files
 
 #pragma once
 
@@ -15,6 +15,15 @@
 #include "./LuaFunctor.h"
 #include "./LuaFunction.h"
 
+#ifdef LUASTATE_DEBUG_MODE
+#   define CHECK_STACK() \
+    if (stack::numberOfPushedValues(_luaState.get()) - _stackTop != _pushedValues) { \
+        throw StackError(stack::numberOfPushedValues(_luaState.get()), _pushedValues); \
+    }
+#else
+#   define CHECK_STACK()
+#endif
+
 namespace lua {
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23,14 +32,10 @@ namespace lua {
         std::shared_ptr<lua_State> _luaState;
         
         mutable int _pushedValues;
-        const int _stackTop;
         
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-        void checkStack() const {
-            if (stack::numberOfPushedValues(_luaState.get()) - _stackTop != _pushedValues) {
-                throw StackError(stack::numberOfPushedValues(_luaState.get()), _pushedValues);
-            }
-        }
+#ifdef LUASTATE_DEBUG_MODE
+        int _stackTop;
+#endif
         
     public:
         // constructors
@@ -38,10 +43,12 @@ namespace lua {
         
         Value(const std::shared_ptr<lua_State>& luaState, const char* name)
         : _luaState(luaState)
-        , _pushedValues(2)
-        , _stackTop(stack::numberOfPushedValues(_luaState.get())) {
+        , _pushedValues(2) {
             stack::push(luaState.get(), name);
-            stack::get(_luaState.get(), LUA_GLOBALSINDEX, name);
+            stack::get_global(_luaState.get(), name);
+#ifdef LUASTATE_DEBUG_MODE
+            _stackTop = stack::numberOfPushedValues(_luaState.get());
+#endif
         }
         
         ~Value() {
@@ -54,13 +61,12 @@ namespace lua {
         
         // operator overloads
         //////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        Value& operator= (const Value &) = delete;
+        Value& operator= (Value& value) = delete;
         Value& operator= (Value &&) = default;
         
         template<typename T>
         Value&& operator[](T key) {
-            checkStack();
+            CHECK_STACK();
             
             stack::push(_luaState.get(), key);
             stack::get(_luaState.get(), -2, key);
@@ -71,7 +77,7 @@ namespace lua {
         
         template<typename ... Ts>
         Function operator()(Ts... args) const {
-            checkStack();
+            CHECK_STACK();
             _pushedValues -= 1;
             
             stack::push(_luaState.get(), args...);
@@ -80,7 +86,7 @@ namespace lua {
         
         template<typename ... Ts>
         Function call(Ts... args) const {
-            checkStack();
+            CHECK_STACK();
             _pushedValues -= 1;
             
             stack::push(_luaState.get(), args...);
@@ -89,7 +95,7 @@ namespace lua {
         
         template<typename ... Ts>
         Function protectedCall(Ts... args) const {
-            checkStack();
+            CHECK_STACK();
             _pushedValues -= 1;
             
             stack::push(_luaState.get(), args...);
@@ -98,7 +104,7 @@ namespace lua {
         
         template<typename T>
         operator T() const {
-            checkStack();
+            CHECK_STACK();
             _pushedValues -= 2;
             
             auto retValue(stack::read<T>(_luaState.get(), -1));
@@ -108,7 +114,7 @@ namespace lua {
         
         template<typename T>
         void operator= (const T& value) const {
-            checkStack();
+            CHECK_STACK();
             
             stack::pop(_luaState.get(), 1);
             

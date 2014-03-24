@@ -1,13 +1,20 @@
+//
+//  LuaState.h
+//  LuaState
+//
+//  Created by Simon Mikuda on 18/03/14.
+//
+//  See LICENSE and README.md files
+
 #pragma once
 
 #include <cassert>
 #include <string>
 #include <functional>
 #include <memory>
+#include <tuple>
 
 #include <lua.hpp>
-
-//#define LUASTATE_DEBUG_MODE
 
 #ifdef LUASTATE_DEBUG_MODE
 #   define LUASTATE_DEBUG_LOG(format, ...) printf(format, ## __VA_ARGS__)
@@ -36,14 +43,14 @@ namespace lua {
             luaL_openlibs(luaState);
             luaL_newmetatable(luaState, "luaL_Functor");
             
-            // Set up metatable for functors
+            // Set up metatable call operator for functors
             lua_pushcfunction(luaState, [](lua_State* luaState) -> int {
                 BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
                 return functor->call(luaState);
             });
             lua_setfield(luaState, -2, "__call");
             
-            // Set up metatable for functors
+            // Set up metatable garbage collection for functors
             lua_pushcfunction(luaState, [](lua_State* luaState) -> int {
                 BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
                 delete functor;
@@ -93,7 +100,8 @@ namespace lua {
                 throw LoadError(message);
             }
         }
-        
+
+#ifdef LUASTATE_DEBUG_MODE
         /// @returns Number of flushed items
         int flushStack() {
             int count = stack::numberOfPushedValues(_luaState.get());
@@ -101,6 +109,7 @@ namespace lua {
             lua_settop(_luaState.get(), 0);
             return count;
         }
+#endif
         
         std::shared_ptr<lua_State> getState() { return _luaState; }
     };

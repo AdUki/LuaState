@@ -4,7 +4,7 @@
 //
 //  Created by Simon Mikuda on 17/03/14.
 //
-//
+//  See LICENSE and README.md files
 
 #pragma once
 
@@ -29,7 +29,8 @@ namespace lua {
     };
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
-    /// Don't forget to call execute manualy while using protected call! Exceptions cannot be catched while throwed in destructor...
+    /// Don't forget to call execute manualy while using protected call!
+    /// Exceptions cannot be catched while throwed in destructor...
     class RuntimeError: public std::exception
     {
         std::string _message;
@@ -44,6 +45,8 @@ namespace lua {
         }
     };
 
+#ifdef LUASTATE_DEBUG_MODE
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     class StackError: public std::exception
     {
@@ -66,4 +69,6 @@ namespace lua {
             return  message;
         }
     };
+    
+#endif
 }

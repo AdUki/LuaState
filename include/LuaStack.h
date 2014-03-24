@@ -4,20 +4,17 @@
 //
 //  Created by Simon Mikuda on 18/03/14.
 //
-//
+//  See LICENSE and README.md files
 
 #pragma once
-
-#include <lua.hpp>
-#include <tuple>
 
 #include "./Traits.h"
 #include "./LuaPrimitives.h"
 
 namespace lua { namespace stack {
     
-    inline void dump (lua_State *L) {
 #ifdef LUASTATE_DEBUG_MODE
+    inline void dump (lua_State *L) {
         int i;
         int top = lua_gettop(L);
         for (i = 1; i <= top; i++) {  /* repeat for each level */
@@ -43,8 +40,8 @@ namespace lua { namespace stack {
             printf("  ");  /* put a separator */
         }
         printf("\n");  /* end the listing */
-#endif
     }
+#endif
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
@@ -249,6 +246,11 @@ namespace lua { namespace stack {
     inline void get(lua_State* luaState, int index, int key) {
         LUASTATE_DEBUG_LOG("GET  %d\n", key);
         lua_rawgeti(luaState, index, key);
+    }
+    
+    inline void get_global(lua_State* luaState, const char* name) {
+        LUASTATE_DEBUG_LOG("GET global %s\n", name);
+        lua_getglobal(luaState, name);
     }
     
 }}

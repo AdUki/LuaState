@@ -20,11 +20,11 @@ add_folder("test")
 
 include_directories(include)
 
-find_package(LuaJIT)
-include_directories(${LUAJIT_INCLUDE_DIR})
+find_package(Lua51)
+include_directories(${LUA_INCLUDE_DIR})
 
 add_executable(${ProjectName} ${SOURCE_FILES})
-target_link_libraries(${ProjectName} ${LUAJIT_LIBRARY})
+target_link_libraries(${ProjectName} ${LUA_LIBRARY})
 
 # Flags for MacOS which links directly or indirectly against LuaJIT
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

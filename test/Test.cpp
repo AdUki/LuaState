@@ -1,3 +1,13 @@
+//
+//  Traits.h
+//  LuaState
+//
+//  Created by Simon Mikuda on 22/03/14.
+//
+//  See LICENSE and README.md files
+
+#define LUASTATE_DEBUG_MODE
+
 #include "../include/LuaState.h"
 
 #define check(code, result) \
@@ -15,11 +25,27 @@
 
 using namespace std::placeholders;
 
-const char* sayHello()
+//////////////////////////////////////////////////////////////////////////////////////////////////
+const char* getHello()
 {
     return "Hello return\n";
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+struct Resource {
+    static int refCounter;
+    
+    Resource() {
+        ++refCounter;
+    }
+    
+    ~Resource() {
+        --refCounter;
+    }
+};
+int Resource::refCounter = 0;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
 struct Foo {
     int a; int b;
     
@@ -85,7 +111,7 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     {
-        lua::Value table = state["tab"]["ct"];
+        auto table = state["tab"]["ct"];
         int ct1 = table[1];
         int ct2 = table[2];
         int ct3 = table[3];
@@ -183,15 +209,15 @@ int main(int argc, char** argv)
     check(state["newTable"][1], 5);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     bool flag = false;
     state["lambda"] = [&flag]() { flag = true; };
     state.doString("lambda()");
     check(flag, true);
     
-    state["lambda"] = &sayHello;
+    state["lambda"] = &getHello;
     const char* msg = state["lambda"]();
-    check(strcmp(msg, sayHello()), 0);
+    check(strcmp(msg, getHello()), 0);
     
     state["lambda"] = [](int a, int b) -> int { return a + b; };
     state.doString("a = lambda(4, 8)");
@@ -267,6 +293,20 @@ int main(int argc, char** argv)
     state["fooPtr"] = static_cast<lua::Pointer>(fooPtr);
     fooPtr = static_cast<Foo*>(lua::Pointer(state["fooPtr"]));
     check(fooPtr->b, 22);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    state.doString("collectgarbage()");
+    
+    std::shared_ptr<Resource> res = std::make_shared<Resource>();
+    state["fun"] = [res]() {};
+    res.reset();
+    
+    state.doString("fun2 = fun; fun = nil; collectgarbage()");
+    check(Resource::refCounter, 1);
+
+    state.doString("fun2 = nil; collectgarbage()");
+    check(Resource::refCounter, 0);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

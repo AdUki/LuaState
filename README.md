@@ -107,7 +107,33 @@ struct Foo {
 	void setB(int value) { b = value; }
 	Foo(lua::State& state) {
         state["Foo_setA"] = [this](int value) { a = value; };
-	state["Foo_setB"] = std::function<void(int)>(std::bind(&Foo::setB, this, _1));
+        state["Foo_setB"] = std::function<void(int)>(std::bind(&Foo::setB, this, _1));
 	}
 };
 ```
+### Managing C++ classes by garbage collector 
+
+It is highly recommended to use shared pointers and then you will have garbage collected classes in C++. Objects will exist util there is last instance of shared pointer and they will be immediately released when all shared pointer instances are gone.
+
+Our resource:
+
+```cpp
+struct Resource {
+    Resource() { printf("New resource\n"); }
+    ~Resource() { printf("Released resource\n"); }
+
+    void doStuff() { printf("Working..."); }
+};
+```
+
+Resource using and released by garbage collector:
+
+```cpp
+std::shared_ptr<Resource> resource = std::make_shared<Resource>(); // New resource
+state["useResource"] = [resource]() { resource->doStuff(); };
+resource.reset();
+
+state.doString("useResource()"); // Working
+state.doString("useResource = nil; collectgarbage()"); // Released resource
+```
+
