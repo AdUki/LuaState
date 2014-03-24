@@ -18,7 +18,7 @@
 #ifdef LUASTATE_DEBUG_MODE
 #   define CHECK_STACK() \
     if (stack::numberOfPushedValues(_luaState.get()) - _stackTop != _pushedValues) { \
-        throw StackError(stack::numberOfPushedValues(_luaState.get()), _pushedValues); \
+        throw StackError(_luaState.get(), stack::numberOfPushedValues(_luaState.get()) - _stackTop, _pushedValues); \
     }
 #else
 #   define CHECK_STACK()
@@ -43,12 +43,13 @@ namespace lua {
         
         Value(const std::shared_ptr<lua_State>& luaState, const char* name)
         : _luaState(luaState)
-        , _pushedValues(2) {
+        , _pushedValues(2)
+#ifdef LUASTATE_DEBUG_MODE
+        , _stackTop(stack::numberOfPushedValues(_luaState.get()))
+#endif
+        {
             stack::push(luaState.get(), name);
             stack::get_global(_luaState.get(), name);
-#ifdef LUASTATE_DEBUG_MODE
-            _stackTop = stack::numberOfPushedValues(_luaState.get());
-#endif
         }
         
         ~Value() {
@@ -67,11 +68,10 @@ namespace lua {
         template<typename T>
         Value&& operator[](T key) {
             CHECK_STACK();
+            _pushedValues += 2;
             
             stack::push(_luaState.get(), key);
             stack::get(_luaState.get(), -2, key);
-            _pushedValues += 2;
-            
             return std::move(*this);
         }
         
