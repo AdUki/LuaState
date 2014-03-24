@@ -69,4 +69,20 @@ namespace lua {
             return returnValue;
         }
     };
+    
+    // compare operators
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    inline bool operator==(const Function &value, const char *string)        { return strcmp(value, string) == 0; }
+    inline bool operator==(const char *string, const Function &value)        { return strcmp(value, string) == 0; }
+    inline bool operator==(const Function &value, const std::string& string) { return strcmp(value, string.c_str()) == 0; }
+    inline bool operator==(const std::string& string, const Function &value) { return strcmp(value, string.c_str()) == 0; }
+    
+    template <typename T>
+    inline bool operator==(const Function &stateValue, const T& value) {
+        return T(stateValue) == value;
+    }
+    template <typename T>
+    inline bool operator==(const T& value, const Function &stateValue) {
+        return T(stateValue) == value;
+    }
 }

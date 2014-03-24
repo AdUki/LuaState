@@ -131,9 +131,7 @@ int main(int argc, char** argv)
     check(boolValue, true);
     
     state.doString("function cat(a,b) return a .. b end");
-    cText = state["cat"]("aa","bb");
-//    text = state["cat"]("aa","bb");
-    text = cText; // TODO: fix na string
+    text = lua::String(state["cat"]("aa","bb")); // TODO: fix na string
     check(text, "aabb");
 
     state.doString("function multiRet() return 4.5, 10, false, 6.5 end");

@@ -101,7 +101,7 @@ namespace lua {
             checkStack();
             _pushedValues -= 2;
             
-            auto retValue = stack::read<T>(_luaState.get(), -1);
+            auto retValue(stack::read<T>(_luaState.get(), -1));
             stack::pop(_luaState.get(), 2);
             return retValue;
         }
