@@ -7,7 +7,7 @@ Lightweight Lua51 binding library for C++11.
 
 Just create lua::State variable, which will initialize lus_State and loads up standard libraries. It will close state automatically in destructor.
 
-``` 
+```cpp
 #include <luastate.h>
 int main() {
    lua::State state;
@@ -19,7 +19,7 @@ int main() {
 
 Reading values from Lua state is very simple. It is using templates, so type information is required.
 
-```
+```cpp
 state.doString("number = 100; text = 'hello'");
 int number =state["number"];
 std::string text = state["text"];
@@ -27,7 +27,7 @@ std::string text = state["text"];
 
 When reading values from tables, you just chain [] operators.
 
-```
+```cpp
 state.doString("table = { a = 1, b = { 2 }, c = 3}");
 int a = state["table"]["a"];
 int b = state["table"]["b"][1];
@@ -38,7 +38,7 @@ int c = state["table"]["c"];
 
 You can call lua functions with () operator with various number of arguments while returning none, one or more values.
 
-```
+```cpp
 state.doString("function setFoo() foo = "hello" end");
 state.doString("function getFoo() return foo end");
 
@@ -58,7 +58,7 @@ lua::tie(result, number, text) = state["iWantMore"]();
  
 Is also pretty straightforward...
 
-```
+```cpp
 state.doString("table = { a = 1, b = { 2 }, c = 3}");
 state["table"]["a"] = 100;
 state["table"]["b"][1] = 200;
@@ -74,7 +74,7 @@ state["newTable"][3] = "c";
 
 You can bind C functions, lambdas and std::functions with bind. These instances are managed by Lua garbage collector and will be destroyed when you will lost last reference in Lua state to them. 
 
-```
+```cpp
 void sayHello() { printf("Hello!\n"); }
 state["cfunction"] = &sayHello;
 state["cfunction"](); // Hello!
@@ -86,7 +86,7 @@ int result = state["lambda"](12, 5); // result = 3
 
 They can return one or more values with use of std::tuple. For example, when you want to register more functions, you can return bundled in tuple...
 
-```
+```cpp
 state["getFncs"] = []() 
 -> std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> {
     return {
@@ -100,7 +100,8 @@ state.doString("fnc1, fnc2, fnc3 = getFncs()"
 ```
 
 You can easily register your classes functions with `this` pointer passing to lambda capture or bind...
-```
+
+```cpp
 struct Foo {
 	int a; int b;
     
@@ -111,13 +112,14 @@ struct Foo {
 	}
 };
 ```
+
 ### Managing C++ classes by garbage collector 
 
 It is highly recommended to use shared pointers and then you will have garbage collected classes in C++. Objects will exist util there is last instance of shared pointer and they will be immediately released when all shared pointer instances are gone.
 
 Our resource:
 
-```
+```cpp
 struct Resource {
     Resource() { printf("New resource\n"); }
     ~Resource() { printf("Released resource\n"); }
@@ -128,7 +130,7 @@ struct Resource {
 
 Resource using and released by garbage collector:
 
-```
+```cpp
 std::shared_ptr<Resource> resource = std::make_shared<Resource>(); // New resource
 state["useResource"] = [resource]() { resource->doStuff(); };
 resource.reset();
