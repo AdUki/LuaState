@@ -57,13 +57,23 @@ namespace lua {
                 stack::pop(_luaState.get(), _pushedValues);
         }
         
-        Value(const Value&) = delete;
+        Value(const Value&) = default;
         Value(Value&&) = default;
         
         // operator overloads
         //////////////////////////////////////////////////////////////////////////////////////////////////
         Value& operator= (Value& value) = delete;
         Value& operator= (Value &&) = default;
+
+        template<typename T>
+        Value operator[](T key) const & {
+            CHECK_STACK();
+            _pushedValues += 2;
+            
+            stack::push(_luaState.get(), key);
+            stack::get(_luaState.get(), -2, key);
+            return Value(*this);
+        }
         
         template<typename T>
         Value&& operator[](T key) {

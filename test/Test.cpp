@@ -310,6 +310,21 @@ int main(int argc, char** argv)
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
+    state.doString("passToFunction = { a = 5 }");
+    lua::Value luaValue = state["passToFunction"];
+    check(luaValue["a"], 5);
+    check(luaValue["a"], 5);
+    check(luaValue["a"], 5);
+    
+    auto fnc = [] (const lua::Value& value) {
+        check(value["a"], 5);
+        check(value["a"], 5);
+        check(value["a"], 5);
+    };
+    fnc(luaValue);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
     check(state.flushStack(), 0);
     
     return 0;
