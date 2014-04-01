@@ -25,6 +25,9 @@
 #endif
 
 namespace lua {
+    
+    class Value;
+    typedef const Value Ref;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     class Value
@@ -36,6 +39,16 @@ namespace lua {
 #ifdef LUASTATE_DEBUG_MODE
         int _stackTop;
 #endif
+
+        Value(const std::shared_ptr<lua_State>& luaState, int pushedValues)
+        : _luaState(luaState)
+        , _pushedValues(pushedValues)
+#ifdef LUASTATE_DEBUG_MODE
+        , _stackTop(stack::numberOfPushedValues(_luaState.get()) - _pushedValues)
+#endif
+        {
+        
+        }
         
     public:
         // constructors
@@ -57,7 +70,7 @@ namespace lua {
                 stack::pop(_luaState.get(), _pushedValues);
         }
         
-        Value(const Value&) = default;
+        Value(const Value& value) = delete;
         Value(Value&&) = default;
         
         // operator overloads
@@ -66,13 +79,13 @@ namespace lua {
         Value& operator= (Value &&) = default;
 
         template<typename T>
-        Value operator[](T key) const & {
+        Value operator[](T key) const {
             CHECK_STACK();
-            _pushedValues += 2;
             
             stack::push(_luaState.get(), key);
             stack::get(_luaState.get(), -2, key);
-            return Value(*this);
+            
+            return Value(_luaState, 2);
         }
         
         template<typename T>
@@ -170,6 +183,5 @@ namespace lua {
     inline bool operator==(const T& value, const Value &stateValue) {
         return T(stateValue) == value;
     }
-    
 }
 
