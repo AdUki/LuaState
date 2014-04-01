@@ -152,6 +152,16 @@ namespace lua { namespace stack {
         return read<lua::String>(luaState, index);
     }
     
+    template<>
+    inline long read(lua_State* luaState, int index) {
+        return read<lua::Integer>(luaState, index);
+    }
+    
+    template<>
+    inline unsigned read(lua_State* luaState, int index) {
+        return read<lua::Integer>(luaState, index);
+    }
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     inline void pop(lua_State* luaState, int n) {
