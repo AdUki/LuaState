@@ -309,25 +309,30 @@ int main(int argc, char** argv)
     check(Resource::refCounter, 0);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
-    
-    state.doString("passToFunction = { a = 5, nested = { b = 4 } }");
-    lua::Ref luaValue = state["passToFunction"];
-    check(luaValue["a"], 5);
-    check(luaValue["nested"]["b"], 4);
-    check(luaValue["a"], 5);
-    
-    auto fnc = [] (const lua::Value& value) {
-        check(value["a"], 5);
-        check(value["nested"]["b"], 4);
-        check(value["a"], 5);
-    };
-    fnc(luaValue);
-    
-    check(luaValue["a"], 5);
-    check(luaValue["nested"]["b"], 4);
-    check(luaValue["a"], 5);
-    
+    {
+        state.doString("passToFunction = { a = 5, nested = { b = 4 } }");
+        lua::Ref luaValue = state["passToFunction"];
+        check(luaValue["a"], 5);
+        check(luaValue["nested"]["b"], 4);
+        check(luaValue["a"], 5);
+        
+        auto fnc = [] (const lua::Value& value) {
+            check(value["a"], 5);
+            check(value["nested"]["b"], 4);
+            check(value["a"], 5);
+        };
+        fnc(luaValue);
+        
+        check(luaValue["a"], 5);
+        check(luaValue["nested"]["b"], 4);
+        check(luaValue["a"], 5);
+    }
     //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    check(state["passToFunction"]["baaalalalala"].isNil(), true);
+    check(state["passToFunction"]["a"].isNil(), false);
+    check(state["passToFunction"]["nested"]["baaalalalala"].isNil(), true);
+    check(state["passToFunction"]["nested"]["b"].isNil(), false);
     
     check(state.flushStack(), 0);
     

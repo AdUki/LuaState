@@ -166,6 +166,10 @@ namespace lua {
             return static_cast<T*>(Pointer(*this));
         }
         
+        bool isNil() {
+            return lua_isnil(_luaState.get(), -1);
+        }
+        
     };
     
     // compare operators
