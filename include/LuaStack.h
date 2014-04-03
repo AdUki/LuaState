@@ -11,6 +11,8 @@
 #include "./Traits.h"
 #include "./LuaPrimitives.h"
 
+#include <cmath>
+
 namespace lua { namespace stack {
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,7 +108,63 @@ namespace lua { namespace stack {
         push_helper(luaState, typename traits::make_indexes<Args...>::type(), tuple);
         return sizeof...(Args);
     }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
 
+    template<typename T>
+    inline bool check(lua_State* luaState, int index);
+    
+    template<>
+    inline bool check<lua::Integer>(lua_State* luaState, int index)
+    {
+        if (!lua_isnumber(luaState, index))
+            return false;
+        
+        lua_Number eps = std::numeric_limits<lua_Number>::epsilon();
+        double number = lua_tonumber(luaState, index);
+        return fabs(number - static_cast<int>(number + eps)) <= eps;
+    }
+    
+    template<>
+    inline bool check<lua::Number>(lua_State* luaState, int index)
+    {
+        return lua_isnumber(luaState, index);
+    }
+    
+    template<>
+    inline bool check<lua::Boolean>(lua_State* luaState, int index)
+    {
+        return lua_isboolean(luaState, index);
+    }
+    
+    template<>
+    inline bool check<lua::String>(lua_State* luaState, int index)
+    {
+        // Lua is treating numbers also like strings, because they are always convertible to string
+        if (lua_isnumber(luaState, index))
+            return false;
+        
+        return lua_isstring(luaState, index);
+    }
+    
+    template<>
+    inline bool check<lua::Null>(lua_State* luaState, int index)
+    {
+        return lua_isnil(luaState, index);
+    }
+    
+    template<>
+    inline bool check<lua::Pointer>(lua_State* luaState, int index)
+    {
+        return lua_islightuserdata(luaState, index);
+    }
+    
+    template<>
+    inline bool check<lua::Table>(lua_State* luaState, int index)
+    {
+        return lua_istable(luaState, index);
+    }
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<typename T>

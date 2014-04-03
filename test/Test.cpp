@@ -326,13 +326,46 @@ int main(int argc, char** argv)
         check(luaValue["a"], 5);
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
+        
+        luaValue.is<lua::Null>();
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////
+    {
+        lua::Ref ref = state["sdjkflaksdjfla"];
+        check(ref.is<lua::Null>(), true);
+    }
+    check(state["passToFunction"]["baaalalalala"].is<lua::Null>(), true);
+    check(state["passToFunction"]["a"].is<lua::Null>(), false);
+    check(state["passToFunction"]["nested"]["baaalalalala"].is<lua::Null>(), true);
+    check(state["passToFunction"]["nested"]["b"].is<lua::Null>(), false);
     
-    check(state["passToFunction"]["baaalalalala"].isNil(), true);
-    check(state["passToFunction"]["a"].isNil(), false);
-    check(state["passToFunction"]["nested"]["baaalalalala"].isNil(), true);
-    check(state["passToFunction"]["nested"]["b"].isNil(), false);
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    void* pointer = &intValue;
+    state["pointer"] = pointer;
+    state["text"] = "my text";
+    
+    check(state["pointer"].is<lua::Pointer>(), true);
+    check(state["a"].is<lua::Pointer>(), false);
+    check(state["tab"].is<lua::Pointer>(), false);
+    check(state["a"].is<lua::Integer>(), true);
+    check(state["a"].is<lua::String>(), false);
+    check(state["text"].is<lua::String>(), true);
+    check(state["a"].is<lua::Table>(), false);
+    check(state["tab"].is<lua::Table>(), true);
+    check(state["a"].is<lua::Null>(), false);
+    check(state["tab"].is<lua::Null>(), false);
+    check(state["this_is_nil_value"].is<lua::Null>(), true);
+      
+    check(state["a"].get<lua::Integer>(), 12);
+    check(strcmp(state["text"].get<lua::String>(), "my text"), 0);
+    try {
+        state["this_is_nil_value"].get<lua::Integer>();
+        assert(false);
+    } catch (std::bad_cast ex) {
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
     
     check(state.flushStack(), 0);
     

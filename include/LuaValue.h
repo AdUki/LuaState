@@ -157,19 +157,26 @@ namespace lua {
         //////////////////////////////////////////////////////////////////////////////////////////////////
 
         template <typename T>
-        void setPointer(T* pointer) {
+        bool is() const {
+            return stack::check<T>(_luaState.get(), -1);
+        }
+        
+        template <typename T>
+        T get() const {
+            if (is<T>() == false)
+                throw std::bad_cast();
+            return stack::read<T>(_luaState.get(), -1);
+        }
+        
+        template <typename T>
+        void setPointer(T* pointer) const {
             operator=(static_cast<void*>(pointer));
         }
         
         template <typename T>
-        T* getPointer() {
+        T* getPointer() const {
             return static_cast<T*>(Pointer(*this));
         }
-        
-        bool isNil() {
-            return lua_isnil(_luaState.get(), -1);
-        }
-        
     };
     
     // compare operators
