@@ -67,8 +67,13 @@ namespace lua {
         ~State() {
         }
         
+        State(const State& state) = delete;
+        State(State&& state) = default;
+        
         // operators overloads
         //////////////////////////////////////////////////////////////////////////////////////////////////
+        State& operator=(const State& state) = delete;
+        State& operator= (State &&) = default;
         
         Value operator[](lua::String name) {
             return Value(_luaState, name);

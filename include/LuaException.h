@@ -13,7 +13,6 @@
 
 namespace lua {
     
-#ifdef LUASTATE_DEBUG_MODE
     namespace stack {
         
         inline void dump (lua_State *L) {
@@ -45,7 +44,6 @@ namespace lua {
         }
         
     }
-#endif
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     class LoadError: public std::exception
@@ -78,38 +76,4 @@ namespace lua {
             return _message.c_str();
         }
     };
-
-#ifdef LUASTATE_DEBUG_MODE
-    
-    //////////////////////////////////////////////////////////////////////////////////////////////////
-    class StackError: public std::exception
-    {
-        int _stackTop;
-        int _valueTop;
-        lua_State* _luaState;
-        
-    public:
-        StackError(lua_State* luaState, int stackTop, int valueTop)
-        : _stackTop(stackTop)
-        , _valueTop(valueTop)
-        , _luaState(luaState) {}
-        
-        virtual ~StackError() throw() {}
-        
-        virtual const char* what() const throw()
-        {
-            static const char format[] =
-                "Invalid stack manipulation! "
-                "Stack top is %d lua::Value top is %d. "
-                "Clean lua::Values that are not in use!\n"
-                "Stack dump:";
-            
-            stack::dump(_luaState);
-            static char message[sizeof(format) + 10];
-            sprintf(message, format, _stackTop, _valueTop);
-            return  message;
-        }
-    };
-    
-#endif
 }
