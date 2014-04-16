@@ -80,6 +80,12 @@ namespace lua {
         // other functions
         //////////////////////////////////////////////////////////////////////////////////////////////////
         
+        template<typename T>
+        void set(lua::String key, const T& value) const {
+            stack::push(_luaState.get(), value);
+            lua_setglobal(_luaState.get(), key);
+        }
+        
         void doFile(const std::string& filePath) {
             if (luaL_dofile(_luaState.get(), filePath.c_str())) {
                 std::string message = stack::read<std::string>(_luaState.get(), -1);
@@ -98,7 +104,7 @@ namespace lua {
 #ifdef LUASTATE_DEBUG_MODE
         /// @returns Number of flushed items
         int flushStack() {
-            int count = stack::numberOfPushedValues(_luaState.get());
+            int count = stack::top(_luaState.get());
             LUASTATE_DEBUG_LOG("Flushed %d elements from stack\n", count);
             lua_settop(_luaState.get(), 0);
             return count;

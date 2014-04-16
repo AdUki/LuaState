@@ -53,8 +53,8 @@ struct Foo {
     
 	Foo(lua::State& state) {
         
-        state["Foo_setA"] = [this](int value) { a = value; };
-		state["Foo_setB"] = std::function<void(int)>(std::bind(&Foo::setB, this, _1));
+        state.set("Foo_setA", [this](int value) { a = value; } );
+		state.set("Foo_setB", std::function<void(int)>(std::bind(&Foo::setB, this, _1)) );
 	}
 };
 
@@ -91,7 +91,7 @@ int main(int argc, char** argv)
     check(state["a"], text.c_str());
     const char* cText = state["a"];
     check(strcmp(cText, "ahoj"), 0);
-
+    check(state.flushStack(), 0);
 
     state.doString("a = true");
     bool boolValue = state["a"];
@@ -107,11 +107,13 @@ int main(int argc, char** argv)
     check(state["tab"]["ct"][1], 10);
     check(state["tab"]["ct"][2], 20);
     check(state["tab"]["ct"][3], 30);
+    check(state.flushStack(), 0);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     {
-        auto table = state["tab"]["ct"];
+        lua::Ref table = state["tab"]["ct"];
+        lua::stack::dump(state.getState().get());
         int ct1 = table[1];
         int ct2 = table[2];
         int ct3 = table[3];
@@ -119,20 +121,16 @@ int main(int argc, char** argv)
         check(ct2, 20);
         check(ct3, 30);
         
-        {
-            lua::Value table2 = state["tab"];
-            int tab = table2["a"];
-            check(tab, 1);
-            
-            try {
-                ct2 = table[1];
-                assert(false);
-            } catch (lua::StackError exp) {
-                check(ct2, 20);
-            }
-        }
-        ct2 = table[1];
-        check(ct2, 10);
+        lua::Ref table2 = state["tab"];
+        int tab = table2["a"];
+        check(tab, 1);
+        
+        ct3 = table[1];
+        ct2 = table[3];
+        ct1 = table[2];
+        check(ct3, 10);
+        check(ct2, 30);
+        check(ct1, 20);
     }
     
     int intValue = state["tab"]["ct"][2];
@@ -171,19 +169,19 @@ int main(int argc, char** argv)
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
-    state["tab"]["a"] = 33;
+    state["tab"].set("a", 33);
     intValue = state["tab"]["a"];
     check(state["tab"]["a"], 33);
     
-    state["var"] = 8;
+    state.set("var", 8);
     check(state["var"], 8);
     
-    state["tab"][10] = 44;
-    state["tab"][10] = 55;
+    state["tab"].set(10, 44);
+    state["tab"].set(10, 55);
     intValue = state["tab"][10];
     check(state["tab"][10], 55);
     
-    state["tab"][11] = "text";
+    state["tab"].set(11, "text");
     cText = state["tab"][11];
     text = cText;
     check(text, "text");
@@ -192,42 +190,42 @@ int main(int argc, char** argv)
     
     state.doString("nested = { { { { 'Insane in the middle brain!' } } } }");
     
-    state["nested"][1][1][1][1] = "OK";
+    state["nested"][1][1][1].set(1, "OK");
     check(state["nested"][1][1][1][1], "OK");
     
-    state["nested"][1][1][2] = "OK";
+    state["nested"][1][1].set(2, "OK");
     check(state["nested"][1][1][2], "OK");
     
-    state["nested"][1][1]["a"] = "OK";
+    state["nested"][1][1].set("a", "OK");
     check(state["nested"][1][1]["a"], "OK");
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
-    state["newTable"] = 8;
-    state["newTable"] = lua::Table();
-    state["newTable"][1] = 5;
+    state.set("newTable", 8);
+    state.set("newTable", lua::Table());
+    state["newTable"].set(1, 5);
     check(state["newTable"][1], 5);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
     bool flag = false;
-    state["lambda"] = [&flag]() { flag = true; };
+    state.set("lambda", [&flag]() { flag = true; } );
     state.doString("lambda()");
     check(flag, true);
     
-    state["lambda"] = &getHello;
+    state.set("lambda", &getHello);
     const char* msg = state["lambda"]();
     check(strcmp(msg, getHello()), 0);
     
-    state["lambda"] = [](int a, int b) -> int { return a + b; };
+    state.set("lambda", [](int a, int b) -> int { return a + b; } );
     state.doString("a = lambda(4, 8)");
     check(state["a"], 12);
     intValue = state["lambda"](2, 7);
     check(intValue, 9);
     
-    state["lambda"] = []() -> std::tuple<lua::Integer, lua::String> {
+    state.set("lambda", []() -> std::tuple<lua::Integer, lua::String> {
         return std::tuple<lua::Integer, lua::String>(23, "abc");
-    };
+    });
     
     lua::tie(intValue,  cText) = state["lambda"]();
     check(intValue, 23);
@@ -239,23 +237,23 @@ int main(int argc, char** argv)
     check(foo.a, 10);
     check(foo.b, 20);
     
-    state["getFncs"] = []()
+    state.set("getFncs", []()
     -> std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> {
         return {
             [] () -> int { return 100; },
             [] () -> int { return 200; },
             [] () -> int { return 300; }
         };
-    };
+    });
     int a, b, c;
-    state["setValues"] = [&a, &b, &c]()
+    state.set("setValues", [&a, &b, &c]()
     -> std::tuple<std::function<void(int)>, std::function<void(int)>, std::function<void(int)>> {
         return {
             [&] (int value) { a = value; },
             [&] (int value) { b = value; },
             [&] (int value) { c = value; }
         };
-    };
+    });
     
     state.doString("fnc1, fnc2, fnc3 = getFncs()"
                    "setA, setB, setC = setValues()"
@@ -266,7 +264,7 @@ int main(int argc, char** argv)
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
-    state["goodFnc"] = [](){ };
+    state.set("goodFnc", [](){ });
     state["goodFnc"]();
     state["goodFnc"].call();
     state["goodFnc"].protectedCall();
@@ -285,12 +283,12 @@ int main(int argc, char** argv)
     
     Foo* fooPtr = new Foo(state);
     fooPtr->a = 13;
-    state["fooPtr"].setPointer(fooPtr);
-    fooPtr = state["fooPtr"].getPointer<Foo>();
+    state.set<lua::Pointer>("fooPtr", fooPtr);
+    fooPtr = state["fooPtr"].getPtr<Foo>();
     check(fooPtr->a, 13);
     
     fooPtr->b = 22;
-    state["fooPtr"] = static_cast<lua::Pointer>(fooPtr);
+    state.set<lua::Pointer>("fooPtr", fooPtr);
     fooPtr = static_cast<Foo*>(lua::Pointer(state["fooPtr"]));
     check(fooPtr->b, 22);
     
@@ -299,7 +297,7 @@ int main(int argc, char** argv)
     state.doString("collectgarbage()");
     
     std::shared_ptr<Resource> res = std::make_shared<Resource>();
-    state["fun"] = [res]() {};
+    state.set("fun", [res]() {} );
     res.reset();
     
     state.doString("fun2 = fun; fun = nil; collectgarbage()");
@@ -316,19 +314,25 @@ int main(int argc, char** argv)
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
-        auto fnc = [] (const lua::Value& value) {
+        auto fnc = [] (const lua::Ref& value) {
             check(value["a"], 5);
             check(value["nested"]["b"], 4);
             check(value["a"], 5);
+            
+            lua::Ref nestedLuaValue = value["nested"];
+            check(nestedLuaValue["b"], 4);
         };
         fnc(luaValue);
+        fnc(state["passToFunction"]);
         
         check(luaValue["a"], 5);
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
-        luaValue.is<lua::Null>();
+        lua::Ref nestedLuaValue = luaValue["nested"];
+        check(nestedLuaValue["b"], 4);
     }
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     {
         lua::Ref ref = state["sdjkflaksdjfla"];
@@ -342,8 +346,8 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     void* pointer = &intValue;
-    state["pointer"] = pointer;
-    state["text"] = "my text";
+    state.set("pointer", pointer);
+    state.set("text", "my text");
     
     check(state["pointer"].is<lua::Pointer>(), true);
     check(state["a"].is<lua::Pointer>(), false);
@@ -356,15 +360,31 @@ int main(int argc, char** argv)
     check(state["a"].is<lua::Null>(), false);
     check(state["tab"].is<lua::Null>(), false);
     check(state["this_is_nil_value"].is<lua::Null>(), true);
-      
-    check(state["a"].get<lua::Integer>(), 12);
-    check(strcmp(state["text"].get<lua::String>(), "my text"), 0);
-    try {
-        state["this_is_nil_value"].get<lua::Integer>();
-        assert(false);
-    } catch (std::bad_cast ex) {
-    }
     
+    if (state["a"].get(intValue)) {
+        check(intValue, 12);
+    }
+    else assert(false);
+    
+    if (state["text"].get(cText)) {
+        check(strcmp(cText, "my text"), 0);
+    }
+    else assert(false);
+    
+    check(state["this_is_nil_value"].get(intValue), false);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    {
+        state.doString("tab = { a = 1; b = 'my text'; ct = { 10, 20, 30 } }");
+        
+        check(state["tab"]["a"].is<lua::Integer>() && state["tab"]["b"].is<lua::String>(), true);
+        
+        lua::Ref tabRef = state["tab"];
+        
+        check(tabRef["a"].is<lua::Integer>(), true);
+        check(tabRef["b"].is<lua::String>(), true);
+        check(tabRef["a"].is<lua::Integer>() && tabRef["b"].is<lua::String>(), true);
+    }
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     check(state.flushStack(), 0);

@@ -15,15 +15,6 @@
 #include "./LuaFunctor.h"
 #include "./LuaFunction.h"
 
-#ifdef LUASTATE_DEBUG_MODE
-#   define CHECK_STACK() \
-    if (stack::numberOfPushedValues(_luaState.get()) - _stackTop != _pushedValues) { \
-        throw StackError(_luaState.get(), stack::numberOfPushedValues(_luaState.get()) - _stackTop, _pushedValues); \
-    }
-#else
-#   define CHECK_STACK()
-#endif
-
 namespace lua {
     
     class Value;
@@ -33,21 +24,14 @@ namespace lua {
     class Value
     {
         std::shared_ptr<lua_State> _luaState;
-        
-        mutable int _pushedValues;
-        
-#ifdef LUASTATE_DEBUG_MODE
         int _stackTop;
-#endif
+        mutable int _pushedValues;
 
-        Value(const std::shared_ptr<lua_State>& luaState, int pushedValues)
+        Value(const std::shared_ptr<lua_State>& luaState)
         : _luaState(luaState)
-        , _pushedValues(pushedValues)
-#ifdef LUASTATE_DEBUG_MODE
-        , _stackTop(stack::numberOfPushedValues(_luaState.get()) - _pushedValues)
-#endif
+        , _stackTop(stack::top(_luaState.get()))
+        , _pushedValues(0)
         {
-        
         }
         
     public:
@@ -56,18 +40,15 @@ namespace lua {
         
         Value(const std::shared_ptr<lua_State>& luaState, const char* name)
         : _luaState(luaState)
-        , _pushedValues(2)
-#ifdef LUASTATE_DEBUG_MODE
-        , _stackTop(stack::numberOfPushedValues(_luaState.get()))
-#endif
+        , _stackTop(stack::top(_luaState.get()))
+        , _pushedValues(1)
         {
-            stack::push(luaState.get(), name);
             stack::get_global(_luaState.get(), name);
         }
         
         ~Value() {
             if (_luaState != nullptr)
-                stack::pop(_luaState.get(), _pushedValues);
+                stack::settop(_luaState.get(), _stackTop);
         }
         
         Value(const Value& value) = delete;
@@ -80,28 +61,24 @@ namespace lua {
 
         template<typename T>
         Value operator[](T key) const {
-            CHECK_STACK();
+            Value value(_luaState);
+            stack::get(_luaState.get(), _stackTop + _pushedValues, key);
+            value._pushedValues = 1;
             
-            stack::push(_luaState.get(), key);
-            stack::get(_luaState.get(), -2, key);
-            
-            return Value(_luaState, 2);
+            return std::move(value);
         }
         
         template<typename T>
         Value&& operator[](T key) {
-            CHECK_STACK();
-            _pushedValues += 2;
+            ++_pushedValues;
+            stack::get(_luaState.get(), _stackTop + _pushedValues - 1, key);
             
-            stack::push(_luaState.get(), key);
-            stack::get(_luaState.get(), -2, key);
             return std::move(*this);
         }
         
         template<typename ... Ts>
         Function operator()(Ts... args) const {
-            CHECK_STACK();
-            _pushedValues -= 1;
+            --_pushedValues;
             
             stack::push(_luaState.get(), args...);
             return Function(_luaState, sizeof...(args), false);
@@ -109,8 +86,7 @@ namespace lua {
         
         template<typename ... Ts>
         Function call(Ts... args) const {
-            CHECK_STACK();
-            _pushedValues -= 1;
+            --_pushedValues;
             
             stack::push(_luaState.get(), args...);
             return Function(_luaState, sizeof...(args), false);
@@ -118,8 +94,7 @@ namespace lua {
         
         template<typename ... Ts>
         Function protectedCall(Ts... args) const {
-            CHECK_STACK();
-            _pushedValues -= 1;
+            --_pushedValues;
             
             stack::push(_luaState.get(), args...);
             return Function(_luaState, sizeof...(args), true);
@@ -127,30 +102,18 @@ namespace lua {
         
         template<typename T>
         operator T() const {
-            CHECK_STACK();
-            _pushedValues -= 2;
+            --_pushedValues;
             
             auto retValue(stack::read<T>(_luaState.get(), -1));
-            stack::pop(_luaState.get(), 2);
+            stack::pop(_luaState.get(), 1);
             return retValue;
         }
-        
-        template<typename T>
-        void operator= (const T& value) const {
-            CHECK_STACK();
-            
-            stack::pop(_luaState.get(), 1);
-            
-            if (_pushedValues == 2) {
-                lua::String name = stack::pop_front<lua::String>(_luaState.get());
-                stack::push(_luaState.get(), value);
-                lua_setglobal(_luaState.get(), name);
-            }
-            else {
-                stack::push(_luaState.get(), value);
-                lua_settable(_luaState.get(), -3);
-            }
-            _pushedValues -= 2;
+
+        template<typename K, typename T>
+        void set(const K& key, const T& value) const {
+            stack::push(_luaState.get(), key);
+            stack::push(_luaState.get(), value);
+            lua_settable(_luaState.get(), -3);
         }
         
         // other functions
@@ -162,19 +125,17 @@ namespace lua {
         }
         
         template <typename T>
-        T get() const {
+        bool get(T& value) const {
             if (is<T>() == false)
-                throw std::bad_cast();
-            return stack::read<T>(_luaState.get(), -1);
+                return false;
+            else {
+                value = stack::read<T>(_luaState.get(), -1);
+                return true;
+            }
         }
         
         template <typename T>
-        void setPointer(T* pointer) const {
-            operator=(static_cast<void*>(pointer));
-        }
-        
-        template <typename T>
-        T* getPointer() const {
+        T* getPtr() const {
             return static_cast<T*>(Pointer(*this));
         }
     };

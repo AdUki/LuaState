@@ -17,7 +17,7 @@ namespace lua { namespace stack {
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
-    inline int numberOfPushedValues(lua_State* luaState) {
+    inline int top(lua_State* luaState) {
         return lua_gettop(luaState);
     }
     
@@ -222,6 +222,11 @@ namespace lua { namespace stack {
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
+    inline void settop(lua_State* luaState, int n) {
+        LUASTATE_DEBUG_LOG("  POP  %d\n", top(luaState) - n);
+        lua_settop(luaState, n);
+    }
+    
     inline void pop(lua_State* luaState, int n) {
         LUASTATE_DEBUG_LOG("  POP  %d\n", n);
         lua_pop(luaState, n);
@@ -258,7 +263,7 @@ namespace lua { namespace stack {
     template<typename ... Ts>
     inline std::tuple<Ts...> get_and_pop(lua_State* luaState) {
         constexpr size_t num = sizeof...(Ts);
-        int offset = numberOfPushedValues(luaState) - num + 1;
+        int offset = top(luaState) - num + 1;
         auto value = Pop<num, Ts...>::getTable(luaState, offset);
         stack::pop(luaState, num);
         return value;
