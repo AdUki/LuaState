@@ -60,14 +60,14 @@ Is also pretty straightforward...
 
 ```cpp
 state.doString("table = { a = 1, b = { 2 }, c = 3}");
-state["table"]["a"] = 100;
-state["table"]["b"][1] = 200;
-state["table"]["c"] = 300;
+state["table"].set("a", 100);
+state["table"]["b"].set(1, 200);
+state["table"].set("c", 300);
 
-state["newTable"] = lua::Table();
-state["newTable"][1] = "a";
-state["newTable"][2] = "b";
-state["newTable"][3] = "c";
+state.set("newTable", lua::Table());
+state["newTable"].set(1, "a");
+state["newTable"].set(2, "b");
+state["newTable"].set(3, "c");
 ```
 
 ### Setting functions
@@ -76,25 +76,25 @@ You can bind C functions, lambdas and std::functions with bind. These instances 
 
 ```cpp
 void sayHello() { printf("Hello!\n"); }
-state["cfunction"] = &sayHello;
+state.set("cfunction", &sayHello);
 state["cfunction"](); // Hello!
 
 int value = 20;
-state["lambda"] = [value](int a, int b) -> int { return (a*b)/value; }
+state.set("lambda", [value](int a, int b) -> int { return (a*b)/value; } )
 int result = state["lambda"](12, 5); // result = 3
 ```
 
 They can return one or more values with use of std::tuple. For example, when you want to register more functions, you can return bundled in tuple...
 
 ```cpp
-state["getFncs"] = []() 
+state.set("getFncs", []() 
 -> std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> {
     return {
     	[]() -> int { return 100; },
 		[]() -> int { return 200; },
 		[]() -> int { return 300; }
 	};
-};
+} );
 state.doString("fnc1, fnc2, fnc3 = getFncs()"
                "print(fnc1(), fnc2(), fnc3())"); // 100 200 300
 ```
@@ -107,8 +107,8 @@ struct Foo {
     
 	void setB(int value) { b = value; }
 	Foo(lua::State& state) {
-        state["Foo_setA"] = [this](int value) { a = value; };
-        state["Foo_setB"] = std::function<void(int)>(std::bind(&Foo::setB, this, _1));
+        state.set("Foo_setA", [this](int value) { a = value; } );
+        state.set("Foo_setB", std::function<void(int)>(std::bind(&Foo::setB, this, _1)) );
 	}
 };
 ```
@@ -132,7 +132,7 @@ Resource using and released by garbage collector:
 
 ```cpp
 std::shared_ptr<Resource> resource = std::make_shared<Resource>(); // New resource
-state["useResource"] = [resource]() { resource->doStuff(); };
+state.set("useResource", [resource]() { resource->doStuff(); } );
 resource.reset();
 
 state.doString("useResource()"); // Working
