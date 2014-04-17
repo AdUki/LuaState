@@ -164,6 +164,25 @@ namespace lua { namespace stack {
     {
         return lua_istable(luaState, index);
     }
+
+    template<>
+    inline bool check<lua::Callable>(lua_State* luaState, int index)
+    {
+        bool isCallable = lua_isfunction(luaState, index) || lua_iscfunction(luaState, index);
+        
+        if (!isCallable) {
+            lua_getmetatable(luaState, index);
+            if (lua_istable(luaState, -1)) {
+                lua_pushstring(luaState, "__call");
+                lua_rawget(luaState, -2);
+                isCallable = !lua_isnil(luaState, -1);
+                lua_pop(luaState, 1);
+            }
+            lua_pop(luaState, 1);
+        }
+        
+        return isCallable;
+    }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
 

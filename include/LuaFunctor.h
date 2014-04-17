@@ -4,7 +4,8 @@
 //
 //  Created by Simon Mikuda on 22/03/14.
 //
-//  See LICENSE and README.md files//
+//  See LICENSE and README.md files
+//
 
 #pragma once
 
@@ -13,9 +14,11 @@
 
 namespace lua {
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Base functor class with call function. It is used for registering lamdas, or regular functions
     struct BaseFunctor
     {
-        BaseFunctor(lua_State* luaState, size_t size) {
+        BaseFunctor(lua_State* luaState) {
             LUASTATE_DEBUG_LOG("Functor %p created!\n", this);
         }
         virtual ~BaseFunctor() {
@@ -25,12 +28,14 @@ namespace lua {
         virtual int call(lua_State* luaState) = 0;
     };
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Functor with return values
     template <typename Ret, typename ... Args>
     struct Functor : public BaseFunctor {
         std::function<Ret(Args...)> function;
         
         Functor(lua_State* luaState, std::function<Ret(Args...)> function)
-        : BaseFunctor(luaState, sizeof(*this))
+        : BaseFunctor(luaState)
         , function(function){
         }
         
@@ -40,12 +45,14 @@ namespace lua {
         }
     };
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Functor with no return values
     template <typename ... Args>
     struct Functor<void, Args...> : public BaseFunctor {
         std::function<void(Args...)> function;
         
         Functor(lua_State* luaState, std::function<void(Args...)> function)
-        : BaseFunctor(luaState, sizeof(*this))
+        : BaseFunctor(luaState)
         , function(function) {}
         
         int call(lua_State* luaState) {

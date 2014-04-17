@@ -10,14 +10,32 @@
 
 namespace lua {
     
+    class Value;
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
+    /// This class is for calling lua values and retrieving return values.
     class Function
     {
+        friend class Value;
+        
+        /// Lua state shared pointer
         std::shared_ptr<lua_State> _luaState;
+        
+        /// Number of arguments
         int _numArgs;
-        mutable bool _executed;
+        
+        /// Indicates if it is protected call. Otherwise it is just regular call.
         bool _protectedCall;
         
+        /// Indicates if function was executed. Needed for "automatic" calling while destructing object.
+        mutable bool _executed;
+        
+        /// Call function.
+        ///
+        /// @pre  Arguments are pushed to stack.
+        /// @post Function pushes return values to stack.
+        ///
+        /// @param numRet   Number of return values
         inline void callFunction(int numRet) const {
             _executed = true;
             if (_protectedCall) {
@@ -32,24 +50,36 @@ namespace lua {
             }
         }
         
-    public:
-        // constructors
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-        
+        /// Constructs instance with specified number of arguments and type of call.
+        ///
+        /// @pre  Arguments are pushed to stack.
+        ///
+        /// @param luaState         Shared pointer of Lua state
+        /// @param numArgs          Number of arguments of function
+        /// @param protectedCall
         Function(const std::shared_ptr<lua_State>& luaState, int numArgs, bool protectedCall)
         : _luaState(luaState)
         , _numArgs(numArgs)
+        , _protectedCall(protectedCall)
         , _executed(false)
-        , _protectedCall(protectedCall) {}
+        {}
         
+    public:
+        
+        /// When function was not executed manualy it is executed in desctuctor.
+        ///
+        /// @attention While making protected call we cannot throw exceptions. Please execute function manualy with .execute() function
         ~Function() {
+            
+            assert(!_protectedCall); // Use .execute() function while protected call.
+            
             if (!_executed)
                 callFunction(0);
         }
-        
-        // operator overloads
-        //////////////////////////////////////////////////////////////////////////////////////////////////
 
+        /// Cast operator.
+        ///
+        /// @return Single or multiple (using std::tuple) return values
         template<typename T>
         operator T() const {
             callFunction(1);
@@ -59,9 +89,9 @@ namespace lua {
             return retValue;
         }
         
-        // other functions
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-        
+        /// Executes function. It is not necessary when we are using regular calls.
+        ///
+        /// @return Single or multiple (using std::tuple) return values
         template <typename ... Ret>
         std::tuple<Ret...> execute() const {
             callFunction(sizeof...(Ret));

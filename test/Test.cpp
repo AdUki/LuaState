@@ -69,7 +69,7 @@ int main(int argc, char** argv)
     try {
         state.doString("a()");
         assert(false);
-    } catch (lua::LoadError ex) {
+    } catch (lua::RuntimeError ex) {
         printf("%s ", ex.what());
         printf("OK\n");
     }
@@ -385,6 +385,16 @@ int main(int argc, char** argv)
         check(tabRef["b"].is<lua::String>(), true);
         check(tabRef["a"].is<lua::Integer>() && tabRef["b"].is<lua::String>(), true);
     }
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    check(state["no function here"].is<lua::Callable>(), false);
+    check(state["a"].is<lua::Callable>(), false);
+    check(state["tab"].is<lua::Callable>(), false);
+    check(state["print"].is<lua::Callable>(), true);
+    check(state["io"]["write"].is<lua::Callable>(), true);
+    check(state["setGlobalTest"].is<lua::Callable>(), true);
+    check(state["goodFnc"].is<lua::Callable>(), true);
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     check(state.flushStack(), 0);
