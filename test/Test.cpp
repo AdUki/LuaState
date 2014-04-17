@@ -403,6 +403,12 @@ int main(int argc, char** argv)
     check(ref.get(), 1);
     check(tabRef.get()["a"], 1);
     
+    lua::Ref copyRef = ref;
+    check(copyRef.get(), 1);
+    
+    copyRef = tabRef;
+    check(copyRef.get()["a"], 1);
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     check(state.flushStack(), 0);

@@ -17,15 +17,19 @@ namespace lua {
         std::shared_ptr<lua_State> _luaState;
         
         /// Key of referenced value in LUA_REGISTRYINDEX
-        int _refKey;
+        std::shared_ptr<int> _refKey;
+        
+        void createRefKey() {
+            int refKey = luaL_ref(_luaState.get(), LUA_REGISTRYINDEX);
+            
+            // Unregister reference from registry
+            _refKey = std::shared_ptr<int>(new int(refKey), [this](int* ptr){
+                luaL_unref(_luaState.get(), LUA_REGISTRYINDEX, *_refKey);
+                delete ptr;
+            });
+        }
         
     public:
-        
-        /// Destructor releases registered value
-        ~Ref() {
-            // Unregister reference from registry
-            luaL_unref(_luaState.get(), LUA_REGISTRYINDEX, _refKey);
-        }
 
         // Copy and move constructors just use operator functions
         Ref(const Value& value) { operator=(value); }
@@ -39,7 +43,7 @@ namespace lua {
             lua_pushvalue(_luaState.get(), -1);
             
             // Create reference to registry
-            _refKey = luaL_ref(_luaState.get(), LUA_REGISTRYINDEX);
+            createRefKey();
 	    }
 
         /// Move assignment. Creates lua::Ref from lua::Value.
@@ -52,7 +56,7 @@ namespace lua {
                 value._stackTop -= 1;
             
             // Create reference to registry
-            _refKey = luaL_ref(_luaState.get(), LUA_REGISTRYINDEX);
+            createRefKey();
 	    }
         
         /// Creates lua::Value from lua::Ref
@@ -62,7 +66,7 @@ namespace lua {
             
             Value value(_luaState);
             
-            lua_rawgeti(_luaState.get(), LUA_REGISTRYINDEX, _refKey);
+            lua_rawgeti(_luaState.get(), LUA_REGISTRYINDEX, *_refKey);
             value._pushedValues = 1;
             
             return std::move(value);
