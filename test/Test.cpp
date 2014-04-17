@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     {
-        lua::CRef table = state["tab"]["ct"];
+        lua::CValue table = state["tab"]["ct"];
         lua::stack::dump(state.getState().get());
         int ct1 = table[1];
         int ct2 = table[2];
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
         check(ct2, 20);
         check(ct3, 30);
         
-        lua::CRef table2 = state["tab"];
+        lua::CValue table2 = state["tab"];
         int tab = table2["a"];
         check(tab, 1);
         
@@ -309,17 +309,17 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////////////////////////////
     {
         state.doString("passToFunction = { a = 5, nested = { b = 4 } }");
-        lua::CRef luaValue = state["passToFunction"];
+        lua::CValue luaValue = state["passToFunction"];
         check(luaValue["a"], 5);
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
-        auto fnc = [] (const lua::CRef& value) {
+        auto fnc = [] (const lua::CValue& value) {
             check(value["a"], 5);
             check(value["nested"]["b"], 4);
             check(value["a"], 5);
             
-            lua::CRef nestedLuaValue = value["nested"];
+            lua::CValue nestedLuaValue = value["nested"];
             check(nestedLuaValue["b"], 4);
         };
         fnc(luaValue);
@@ -329,13 +329,13 @@ int main(int argc, char** argv)
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
-        lua::CRef nestedLuaValue = luaValue["nested"];
+        lua::CValue nestedLuaValue = luaValue["nested"];
         check(nestedLuaValue["b"], 4);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     {
-        lua::CRef ref = state["sdjkflaksdjfla"];
+        lua::CValue ref = state["sdjkflaksdjfla"];
         check(ref.is<lua::Null>(), true);
     }
     check(state["passToFunction"]["baaalalalala"].is<lua::Null>(), true);
@@ -379,7 +379,7 @@ int main(int argc, char** argv)
         
         check(state["tab"]["a"].is<lua::Integer>() && state["tab"]["b"].is<lua::String>(), true);
         
-        lua::CRef tabRef = state["tab"];
+        lua::CValue tabRef = state["tab"];
         
         check(tabRef["a"].is<lua::Integer>(), true);
         check(tabRef["b"].is<lua::String>(), true);

@@ -21,10 +21,10 @@ namespace lua {
     class State;
     class Ref;
     
-    /// Naive class for storing references to lua::Value.
+    /// Naive way for storing references to lua::Value.
     ///
-    /// @attention when original value will get out of scope, all lua::Ref data are removed from stack and we can no longer use lua::Ref value
-    typedef const Value CRef;
+    /// @attention When original value will get out of scope, all lua::Ref data are removed from stack and we can no longer use lua::Ref value
+    typedef const Value CValue;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     /// This is class for:
