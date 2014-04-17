@@ -70,11 +70,13 @@ namespace lua {
         ///
         /// @attention While making protected call we cannot throw exceptions. Please execute function manualy with .execute() function
         ~Function() {
-            
-            assert(!_protectedCall); // Use .execute() function while protected call.
-            
-            if (!_executed)
+            if (!_executed) {
+                
+                // Use .execute() function while protected call.
+                assert(!_protectedCall);
+                
                 callFunction(0);
+            }
         }
 
         /// Cast operator.

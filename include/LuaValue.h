@@ -19,12 +19,12 @@ namespace lua {
     
     class Value;
     class State;
+    class Ref;
     
     /// Naive class for storing references to lua::Value.
     ///
     /// @attention when original value will get out of scope, all lua::Ref data are removed from stack and we can no longer use lua::Ref value
-    typedef const Value Ref;
-
+    typedef const Value CRef;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     /// This is class for:
@@ -34,6 +34,9 @@ namespace lua {
     /// * checking value type.
     class Value
     {
+        friend class State;
+        friend class Ref;
+        
         std::shared_ptr<lua_State> _luaState;
         
         /// Indicates number of pushed values to stack on lua::Value creating
@@ -63,8 +66,6 @@ namespace lua {
         {
             stack::get_global(_luaState.get(), name);
         }
-        
-        friend class State;
         
     public:
         

@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     {
-        lua::Ref table = state["tab"]["ct"];
+        lua::CRef table = state["tab"]["ct"];
         lua::stack::dump(state.getState().get());
         int ct1 = table[1];
         int ct2 = table[2];
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
         check(ct2, 20);
         check(ct3, 30);
         
-        lua::Ref table2 = state["tab"];
+        lua::CRef table2 = state["tab"];
         int tab = table2["a"];
         check(tab, 1);
         
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
     state.set("goodFnc", [](){ });
     state["goodFnc"]();
     state["goodFnc"].call();
-    state["goodFnc"].protectedCall();
+    state["goodFnc"].protectedCall().execute();
     
     flag = false;
     state.doString("badFnc = function(a,b) local var = a .. b end");
@@ -309,17 +309,17 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////////////////////////////
     {
         state.doString("passToFunction = { a = 5, nested = { b = 4 } }");
-        lua::Ref luaValue = state["passToFunction"];
+        lua::CRef luaValue = state["passToFunction"];
         check(luaValue["a"], 5);
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
-        auto fnc = [] (const lua::Ref& value) {
+        auto fnc = [] (const lua::CRef& value) {
             check(value["a"], 5);
             check(value["nested"]["b"], 4);
             check(value["a"], 5);
             
-            lua::Ref nestedLuaValue = value["nested"];
+            lua::CRef nestedLuaValue = value["nested"];
             check(nestedLuaValue["b"], 4);
         };
         fnc(luaValue);
@@ -329,13 +329,13 @@ int main(int argc, char** argv)
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
-        lua::Ref nestedLuaValue = luaValue["nested"];
+        lua::CRef nestedLuaValue = luaValue["nested"];
         check(nestedLuaValue["b"], 4);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     {
-        lua::Ref ref = state["sdjkflaksdjfla"];
+        lua::CRef ref = state["sdjkflaksdjfla"];
         check(ref.is<lua::Null>(), true);
     }
     check(state["passToFunction"]["baaalalalala"].is<lua::Null>(), true);
@@ -379,7 +379,7 @@ int main(int argc, char** argv)
         
         check(state["tab"]["a"].is<lua::Integer>() && state["tab"]["b"].is<lua::String>(), true);
         
-        lua::Ref tabRef = state["tab"];
+        lua::CRef tabRef = state["tab"];
         
         check(tabRef["a"].is<lua::Integer>(), true);
         check(tabRef["b"].is<lua::String>(), true);
@@ -394,6 +394,14 @@ int main(int argc, char** argv)
     check(state["io"]["write"].is<lua::Callable>(), true);
     check(state["setGlobalTest"].is<lua::Callable>(), true);
     check(state["goodFnc"].is<lua::Callable>(), true);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    lua::Ref ref = state["tab"]["a"];
+    lua::Ref tabRef = state["tab"];
+    
+    check(ref.get(), 1);
+    check(tabRef.get()["a"], 1);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

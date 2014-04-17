@@ -25,6 +25,7 @@
 #include "./LuaException.h"
 #include "./LuaValue.h"
 #include "./LuaReturn.h"
+#include "./LuaRef.h"
 
 namespace lua {
     
