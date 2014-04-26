@@ -400,14 +400,14 @@ int main(int argc, char** argv)
     lua::Ref ref = state["tab"]["a"];
     lua::Ref tabRef = state["tab"];
     
-    check(ref.get(), 1);
-    check(tabRef.get()["a"], 1);
+    check(ref.unref(), 1);
+    check(tabRef.unref()["a"], 1);
     
     lua::Ref copyRef = ref;
-    check(copyRef.get(), 1);
+    check(copyRef.unref(), 1);
     
     copyRef = tabRef;
-    check(copyRef.get()["a"], 1);
+    check(copyRef.unref()["a"], 1);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

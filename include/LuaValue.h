@@ -87,7 +87,7 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
         template<typename T>
-        Value operator[](T key) const {
+        Value operator[](T key) const & {
             Value value(_luaState);
             stack::get(_luaState.get(), _stackTop + _pushedValues, key);
             value._pushedValues = 1;
@@ -99,7 +99,7 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
         template<typename T>
-        Value&& operator[](T key) {
+        Value&& operator[](T key) && {
             ++_pushedValues;
             stack::get(_luaState.get(), _stackTop + _pushedValues - 1, key);
             
