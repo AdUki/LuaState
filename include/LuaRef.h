@@ -13,8 +13,6 @@ namespace lua {
     /// Reference to Lua value. Can be created from any lua::Value
     class Ref
     {
-        Ref() {}
-        
         /// Shared pointer of Lua state
         std::shared_ptr<lua_State> _luaState;
         
@@ -32,6 +30,8 @@ namespace lua {
         }
         
     public:
+        
+        Ref() {}
         
         // Copy and move constructors just use operator functions
         Ref(const Value& value) { operator=(value); }
@@ -65,6 +65,8 @@ namespace lua {
         ///
         /// @return lua::Value with referenced value on stack
         Value unref() const {
+            
+            assert(_luaState != nullptr);
             
             Value value(_luaState);
             
