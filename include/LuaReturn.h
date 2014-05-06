@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "./LuaFunction.h"
+#include "./LuaStack.h"
+#include "./LuaValue.h"
 
 namespace lua {
     
@@ -30,8 +31,8 @@ namespace lua {
         /// Operator sets values to std::tuple
         ///
         /// @param function     Function being called
-	    void operator= (const Function& function) {
-            _tuple = function.execute<typename std::remove_reference<Ts>::type...>();
+	    void operator= (const Value& value) {
+            _tuple = stack::get_and_pop<typename std::remove_reference<Ts>::type...>(value._luaState.get());
 	    }
 
 	};

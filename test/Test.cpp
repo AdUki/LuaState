@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     {
-        lua::CValue table = state["tab"]["ct"];
+        lua::Value table = state["tab"]["ct"];
         lua::stack::dump(state.getState().get());
         int ct1 = table[1];
         int ct2 = table[2];
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
         check(ct2, 20);
         check(ct3, 30);
         
-        lua::CValue table2 = state["tab"];
+        lua::Value table2 = state["tab"];
         int tab = table2["a"];
         check(tab, 1);
         
@@ -267,12 +267,11 @@ int main(int argc, char** argv)
     state.set("goodFnc", [](){ });
     state["goodFnc"]();
     state["goodFnc"].call();
-    state["goodFnc"].protectedCall().execute();
     
     flag = false;
     state.doString("badFnc = function(a,b) local var = a .. b end");
     try {
-        state["badFnc"].protectedCall(3).execute();
+        state["badFnc"].call(3);
         assert(false);
     } catch (lua::RuntimeError ex) {
         flag = true;
@@ -309,17 +308,17 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////////////////////////////
     {
         state.doString("passToFunction = { a = 5, nested = { b = 4 } }");
-        lua::CValue luaValue = state["passToFunction"];
+        lua::Value luaValue = state["passToFunction"];
         check(luaValue["a"], 5);
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
-        auto fnc = [] (const lua::CValue& value) {
+        auto fnc = [] (const lua::Value& value) {
             check(value["a"], 5);
             check(value["nested"]["b"], 4);
             check(value["a"], 5);
             
-            lua::CValue nestedLuaValue = value["nested"];
+            lua::Value nestedLuaValue = value["nested"];
             check(nestedLuaValue["b"], 4);
         };
         fnc(luaValue);
@@ -329,13 +328,13 @@ int main(int argc, char** argv)
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
-        lua::CValue nestedLuaValue = luaValue["nested"];
+        lua::Value nestedLuaValue = luaValue["nested"];
         check(nestedLuaValue["b"], 4);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     {
-        lua::CValue ref = state["sdjkflaksdjfla"];
+        lua::Value ref = state["sdjkflaksdjfla"];
         check(ref.is<lua::Null>(), true);
     }
     check(state["passToFunction"]["baaalalalala"].is<lua::Null>(), true);
@@ -379,7 +378,7 @@ int main(int argc, char** argv)
         
         check(state["tab"]["a"].is<lua::Integer>() && state["tab"]["b"].is<lua::String>(), true);
         
-        lua::CValue tabRef = state["tab"];
+        lua::Value tabRef = state["tab"];
         
         check(tabRef["a"].is<lua::Integer>(), true);
         check(tabRef["b"].is<lua::String>(), true);
@@ -408,6 +407,31 @@ int main(int argc, char** argv)
     
     copyRef = tabRef;
     check(copyRef.unref()["a"], 1);
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+
+    check(state["tab"]["a"], 1);
+    
+    intValue = 0;
+    state.doString(" function getTab(...) return {...} end ");
+    state.doString(" function get100() return 100 end ");
+
+    {
+        lua::Value aaa = state["getTab"](1,2,3);
+        intValue = aaa[1];
+        check(aaa[1], 1);
+        check(aaa[2], 2);
+        check(aaa[3], 3);
+    }
+    
+    intValue = state["getTab"](1,2,3)[3];
+    check(intValue, 3);
+    
+    intValue = intValue = state["get100"]();
+    check(intValue, 100);
+    
+    state.doString(" function megaChain() return { function() return { 9999 } end } end ");
+    check(state["megaChain"]()[1]()[1], 9999);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

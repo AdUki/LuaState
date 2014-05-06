@@ -13,18 +13,13 @@
 
 #include "./LuaStack.h"
 #include "./LuaFunctor.h"
-#include "./LuaFunction.h"
 
 namespace lua {
     
     class Value;
     class State;
     class Ref;
-    
-    /// Naive way for storing references to lua::Value.
-    ///
-    /// @attention When original value will get out of scope, all lua::Ref data are removed from stack and we can no longer use lua::Ref value
-    typedef const Value CValue;
+    template <typename ... Ts> class Return;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     /// This is class for:
@@ -36,6 +31,7 @@ namespace lua {
     {
         friend class State;
         friend class Ref;
+        template <typename ... Ts> friend class Return;
         
         std::shared_ptr<lua_State> _luaState;
         
@@ -69,6 +65,9 @@ namespace lua {
         
     public:
         
+        /// Enable to initialize empty Value, so we can set it up later
+        Value() {}
+        
         /// Upon deletion we will restore stack to original value
         ~Value() {
             if (_luaState != nullptr)
@@ -79,7 +78,7 @@ namespace lua {
         Value(Value&&) = default;
         Value& operator= (Value &&) = default;
         
-        // Deleted move constructor and operator
+        // Deleted copy constructor and operator
         Value(const Value& value) = delete;
         Value& operator= (Value& value) = delete;
 
@@ -110,32 +109,66 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
-        Function call(Ts... args) const {
-            --_pushedValues;
+        Value operator()(Ts... args) & {
             
+            Value value(_luaState);
             stack::push(_luaState.get(), args...);
-            return Function(_luaState, sizeof...(args), false);
-        }
-
-        /// Call given value.
-        ///
-        /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
-        ///
-        /// @throws lua::RuntimeError   When there is runtime error
-        template<typename ... Ts>
-        Function protectedCall(Ts... args) const {
-            --_pushedValues;
             
-            stack::push(_luaState.get(), args...);
-            return Function(_luaState, sizeof...(args), true);
+            lua_call(_luaState.get(), sizeof...(Ts), LUA_MULTRET);
+            value._pushedValues += stack::top(_luaState.get()) - (_stackTop + _pushedValues);
+            
+            return std::move(value);
         }
         
         /// Call given value.
         ///
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
-        Function operator()(Ts... args) const {
-            return call(args...);
+        Value&& operator()(Ts... args) && {
+            
+            stack::push(_luaState.get(), args...);
+
+            lua_call(_luaState.get(), sizeof...(Ts), LUA_MULTRET);
+            _pushedValues += stack::top(_luaState.get()) - (_stackTop + _pushedValues);
+            
+            return std::move(*this);
+        }
+        
+        /// Protected call of given value.
+        ///
+        /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
+        template<typename ... Ts>
+        Value call(Ts... args) & {
+            
+            Value value(_luaState);
+            stack::push(_luaState.get(), args...);
+            
+            if (lua_pcall(_luaState.get(), sizeof...(Ts), LUA_MULTRET, 0)) {
+                const char* error = lua_tostring(_luaState.get(), -1);
+                lua_pop(_luaState.get(), 1);
+                throw RuntimeError(error);
+            }
+            value._pushedValues += stack::top(_luaState.get()) - (_stackTop + _pushedValues);
+            
+            return std::move(value);
+        }
+        
+        /// Protected call of given value.
+        ///
+        /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
+        template<typename ... Ts>
+        Value&& call(Ts... args) && {
+            
+            stack::push(_luaState.get(), args...);
+            
+            if (lua_pcall(_luaState.get(), sizeof...(Ts), LUA_MULTRET, 0)) {
+                const char* error = lua_tostring(_luaState.get(), -1);
+                lua_pop(_luaState.get(), 1);
+                throw RuntimeError(error);
+            }
+            _pushedValues += stack::top(_luaState.get()) - (_stackTop + _pushedValues);
+            
+            return std::move(*this);
         }
         
         /// Cast operator. Enables to pop values from stack and store it to variables
