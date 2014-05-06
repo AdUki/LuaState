@@ -417,13 +417,34 @@ int main(int argc, char** argv)
     state.doString(" function get100() return 100 end ");
 
     {
+        lua::Value* bbb = new lua::Value();
+        *bbb = state["getTab"](10,20,30);
+        
+        lua::Value* ccc = new lua::Value();
+        *ccc = state["getTab"](100,200,300);
+
+        
         lua::Value aaa = state["getTab"](1,2,3);
-        intValue = aaa[1];
+        
+        check((*bbb)[1], 10);
+        check((*bbb)[2], 20);
+        check((*bbb)[3], 30);
+        
+        lua::stack::dump(state.getState().get());
+        delete ccc;
+        delete bbb;
+        lua::stack::dump(state.getState().get());
+        
         check(aaa[1], 1);
         check(aaa[2], 2);
         check(aaa[3], 3);
+        
+//        state.doString(" function getTabAndValue() return {a=10}, 20 end ");
+//        lua::tie(aaa, intValue) = state["getTabAndValue"]();
+//        check(aaa["a"], 10);
+//        check(intValue, 20);
     }
-    
+
     intValue = state["getTab"](1,2,3)[3];
     check(intValue, 3);
     

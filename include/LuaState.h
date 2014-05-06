@@ -24,6 +24,7 @@
 #   define LUASTATE_DEBUG_LOG(format, ...)
 #endif
 
+#include "./DeallocStackQueue.h"
 #include "./LuaException.h"
 #include "./LuaValue.h"
 #include "./LuaReturn.h"
@@ -38,6 +39,8 @@ namespace lua {
         /// Shared pointer takes care of automaticaly closing Lua state when all instances pointing to it are gone
         std::shared_ptr<lua_State> _luaState;
         
+        detail::DeallocQueue* _deallocQueue;
+        
     public:
         
         /// Constructor creates new state and stores it to shared pointer.
@@ -45,6 +48,7 @@ namespace lua {
         /// @param loadLibs     If we want to open standard libraries - function luaL_openlibs
         State(bool loadLibs) {
             
+            _deallocQueue = new detail::DeallocQueue();
             lua_State* luaState = luaL_newstate();
             assert(luaState != NULL);
             
@@ -72,8 +76,11 @@ namespace lua {
             // Pop metatable
             lua_pop(luaState, 1);
             
-            // Set up destructor for lua state, function lua_close
-            _luaState = std::shared_ptr<lua_State>(luaState, std::bind(&lua_close, luaState));
+            // Set up destructor for lua state, function lua_close and deallocQueue
+            _luaState = std::shared_ptr<lua_State>(luaState, [this] (lua_State* L) {
+                lua_close(L);
+                delete _deallocQueue;
+            });
         }
         
         /// Constructor creates new state stores it to shared pointer and loads standard libraries
@@ -83,7 +90,7 @@ namespace lua {
         ///
         /// @return Some value with type lua::Type
         Value operator[](lua::String name) {
-            return Value(_luaState, name);
+            return Value(_luaState, _deallocQueue, name);
         }
         
         /// Deleted compare operator

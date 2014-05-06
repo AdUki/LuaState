@@ -34,6 +34,7 @@ namespace lua {
         template <typename ... Ts> friend class Return;
         
         std::shared_ptr<lua_State> _luaState;
+        detail::DeallocQueue* _deallocQueue = nullptr;
         
         /// Indicates number of pushed values to stack on lua::Value creating
         int _stackTop;
@@ -41,11 +42,12 @@ namespace lua {
         /// Indicates number pushed values which were pushed by this lua::Value instance
         mutable int _pushedValues;
 
-        /// Constructor for crating lua::Ref instances
+        /// Constructor for creating lua::Ref instances
         ///
         /// @param luaState     Shared pointer of Lua state
-        Value(const std::shared_ptr<lua_State>& luaState)
+        Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue)
         : _luaState(luaState)
+        , _deallocQueue(deallocQueue)
         , _stackTop(stack::top(_luaState.get()))
         , _pushedValues(0)
         {
@@ -55,8 +57,9 @@ namespace lua {
         ///
         /// @param luaState     Shared pointer of Lua state
         /// @param name         Key of global value
-        Value(const std::shared_ptr<lua_State>& luaState, const char* name)
+        Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, const char* name)
         : _luaState(luaState)
+        , _deallocQueue(deallocQueue)
         , _stackTop(stack::top(_luaState.get()))
         , _pushedValues(1)
         {
@@ -70,8 +73,30 @@ namespace lua {
         
         /// Upon deletion we will restore stack to original value
         ~Value() {
-            if (_luaState != nullptr)
-                stack::settop(_luaState.get(), _stackTop);
+            if (_luaState != nullptr) {
+
+                // FIX:  Because lua::tie can pop values instead of lua::Value
+                // TODO: When lua::tie will return lua::Value we can revmoe lines
+                int currentStackTop = stack::top(_luaState.get());
+                if (currentStackTop - _stackTop < _pushedValues)
+                    return;
+                
+                // We will check if we haven't pushed some other new lua::Value to stack
+                if (_stackTop + _pushedValues == currentStackTop) {
+                    
+                    // We will check deallocation priority queue, if there are some lua::Value instances to be deleted
+                    int stackTop = _stackTop;
+                    while (!_deallocQueue->empty() && _deallocQueue->top().stackCap == _stackTop) {
+                        stackTop -= _deallocQueue->top().numElements;
+                        _deallocQueue->pop();
+                    }
+                    stack::settop(_luaState.get(), stackTop);
+                }
+                // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
+                // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
+                else
+                    _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
+            }
         }
         
         // Default move constructor and operator
@@ -87,7 +112,7 @@ namespace lua {
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
         template<typename T>
         Value operator[](T key) const & {
-            Value value(_luaState);
+            Value value(_luaState, _deallocQueue);
             stack::get(_luaState.get(), _stackTop + _pushedValues, key);
             value._pushedValues = 1;
             
@@ -111,7 +136,7 @@ namespace lua {
         template<typename ... Ts>
         Value operator()(Ts... args) & {
             
-            Value value(_luaState);
+            Value value(_luaState, _deallocQueue);
             stack::push(_luaState.get(), args...);
             
             lua_call(_luaState.get(), sizeof...(Ts), LUA_MULTRET);
@@ -140,7 +165,7 @@ namespace lua {
         template<typename ... Ts>
         Value call(Ts... args) & {
             
-            Value value(_luaState);
+            Value value(_luaState, _deallocQueue);
             stack::push(_luaState.get(), args...);
             
             if (lua_pcall(_luaState.get(), sizeof...(Ts), LUA_MULTRET, 0)) {
@@ -176,10 +201,7 @@ namespace lua {
         /// @return Any value of type from LuaPrimitives.h
         template<typename T>
         operator T() const {
-            --_pushedValues;
-            
             auto retValue(stack::read<T>(_luaState.get(), -1));
-            stack::pop(_luaState.get(), 1);
             return retValue;
         }
 
