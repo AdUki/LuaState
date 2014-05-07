@@ -85,12 +85,11 @@ namespace lua {
                 if (_stackTop + _pushedValues == currentStackTop) {
                     
                     // We will check deallocation priority queue, if there are some lua::Value instances to be deleted
-                    int stackTop = _stackTop;
                     while (!_deallocQueue->empty() && _deallocQueue->top().stackCap == _stackTop) {
-                        stackTop -= _deallocQueue->top().numElements;
+                        _stackTop -= _deallocQueue->top().numElements;
                         _deallocQueue->pop();
                     }
-                    stack::settop(_luaState.get(), stackTop);
+                    stack::settop(_luaState.get(), _stackTop);
                 }
                 // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
                 // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
