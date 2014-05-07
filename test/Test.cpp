@@ -421,14 +421,21 @@ int main(int argc, char** argv)
     {
         lua::Value aaa = state["getTab"](1,2,3);
 
+        ccc = new lua::Value();
+        *ccc = state["tab"];
+        
         bbb = new lua::Value();
         *bbb = state["getTab"](10,20,30);
-        
-        ccc = new lua::Value();
-        *ccc = state["getTab"](100,200,300);
 
         check((*bbb)[1], 10);
         check((*bbb)[2], 20);
+        
+        lua::stack::dump(state.getState().get());
+        ccc->set("newValue", 999);
+        lua::stack::dump(state.getState().get());
+        check(state["tab"]["newValue"], 999);
+        check((*ccc)["newValue"], 999);
+        
         check((*bbb)[3], 30);
 
         check(aaa[1], 1);
@@ -442,8 +449,8 @@ int main(int argc, char** argv)
     
     } // Nothing poped
     
-    delete bbb; // Nothing poped
-    delete ccc; // Popped 3 values
+    delete ccc; // Nothing poped
+    delete bbb; // Popped 3 values
 
     intValue = state["getTab"](1,2,3)[3];
     check(intValue, 3);
@@ -457,7 +464,33 @@ int main(int argc, char** argv)
     check(state["megaChain"]()[1]()[1], 9999);
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
+
+    state.set("a", 13);
+    bbb = new lua::Value();
+    *bbb = state["a"];
     
+    ccc = new lua::Value();
+    *ccc = state["getTab"](10,20,30);
+    
+    check(bbb->is<lua::Integer>(), true);
+    check(ccc->is<lua::Table>(), true);
+    
+    ccc->set("newValue", 1.5);
+    check(*bbb, 13);
+    check((*ccc)["newValue"], 1.5);
+    
+    delete bbb;
+    check(ccc->is<lua::Table>(), true);
+    check((*ccc)["newValue"], 1.5);
+    
+    ccc->set("newValue2", "ahoj");
+    check(strcmp((*ccc)["newValue2"], "ahoj"), 0);
+    
+    delete ccc;
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    // Check if stack leaked, we must pop 0 values
     check(state.flushStack(), 0);
     
     return 0;

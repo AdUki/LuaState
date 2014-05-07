@@ -200,7 +200,7 @@ namespace lua {
         /// @return Any value of type from LuaPrimitives.h
         template<typename T>
         operator T() const {
-            auto retValue(stack::read<T>(_luaState.get(), -1));
+            auto retValue(stack::read<T>(_luaState.get(), _stackTop + _pushedValues));
             return retValue;
         }
 
@@ -214,7 +214,7 @@ namespace lua {
         void set(const K& key, const T& value) const {
             stack::push(_luaState.get(), key);
             stack::push(_luaState.get(), value);
-            lua_settable(_luaState.get(), -3);
+            lua_settable(_luaState.get(), _stackTop + _pushedValues);
         }
 
         /// Check if queryied value is some type from LuaPrimitives.h file
@@ -222,7 +222,7 @@ namespace lua {
         /// @return true if yes false if no
         template <typename T>
         bool is() const {
-            return stack::check<T>(_luaState.get(), -1);
+            return stack::check<T>(_luaState.get(), _stackTop + _pushedValues);
         }
         
         /// First check if lua::Value is type T and if yes stores it to value
@@ -235,7 +235,7 @@ namespace lua {
             if (is<T>() == false)
                 return false;
             else {
-                value = stack::read<T>(_luaState.get(), -1);
+                value = stack::read<T>(_luaState.get(), _stackTop + _pushedValues);
                 return true;
             }
         }
