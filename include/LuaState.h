@@ -15,6 +15,8 @@
 #include <functional>
 #include <memory>
 #include <tuple>
+#include <cstring>
+#include <cmath>
 
 #include <lua.hpp>
 
@@ -25,9 +27,14 @@
 #endif
 
 #include "./DeallocStackQueue.h"
+#include "./Traits.h"
+
+#include "./LuaPrimitives.h"
+#include "./LuaStack.h"
 #include "./LuaException.h"
 #include "./LuaValue.h"
 #include "./LuaReturn.h"
+#include "./LuaFunctor.h"
 #include "./LuaRef.h"
 
 namespace lua {
@@ -49,20 +56,41 @@ namespace lua {
         State(bool loadLibs) {
             
             _deallocQueue = new detail::DeallocQueue();
+            detail::DEALLOC_QUEUE = _deallocQueue;
             lua_State* luaState = luaL_newstate();
             assert(luaState != NULL);
             
             if (loadLibs)
                 luaL_openlibs(luaState);
             
+            // Set up destructor for lua state, function lua_close and deallocQueue
+            std::weak_ptr<lua_State>** weakPtr = new std::weak_ptr<lua_State>*();
+            _luaState = std::shared_ptr<lua_State>(luaState, [this, weakPtr] (lua_State* L) {
+                lua_close(L);
+                delete _deallocQueue;
+                delete *weakPtr;
+                delete weakPtr;
+            });
+            *weakPtr = new std::weak_ptr<lua_State>(_luaState);
+            
             // We will create metatable for Lua functors for memory management and actual function call
             luaL_newmetatable(luaState, "luaL_Functor");
             
             // Set up metatable call operator for functors
-            lua_pushcfunction(luaState, [](lua_State* luaState) -> int {
-                BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
-                return functor->call(luaState);
-            });
+            lua_pushlightuserdata(luaState, *weakPtr);
+            lua_pushlightuserdata(luaState, _deallocQueue);
+            lua_pushcclosure(luaState, [](lua_State* luaState) -> int {
+                std::weak_ptr<lua_State> weakPtr = *(std::weak_ptr<lua_State> *)lua_topointer(luaState, lua_upvalueindex(1));
+                
+                std::shared_ptr<lua_State> instance = weakPtr.lock();
+                if (instance != nullptr) {
+                    detail::DeallocQueue* deallocQueue = (detail::DeallocQueue *)lua_topointer(luaState, lua_upvalueindex(2));
+                    BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
+                    return functor->call(instance, deallocQueue);
+                }
+                return 0;
+                
+            }, 2);
             lua_setfield(luaState, -2, "__call");
             
             // Set up metatable garbage collection for functors
@@ -75,12 +103,6 @@ namespace lua {
             
             // Pop metatable
             lua_pop(luaState, 1);
-            
-            // Set up destructor for lua state, function lua_close and deallocQueue
-            _luaState = std::shared_ptr<lua_State>(luaState, [this] (lua_State* L) {
-                lua_close(L);
-                delete _deallocQueue;
-            });
         }
         
         /// Constructor creates new state stores it to shared pointer and loads standard libraries
@@ -102,7 +124,7 @@ namespace lua {
         /// @param value    Value witch will be stored to _G[key]
         template<typename T>
         void set(lua::String key, const T& value) const {
-            stack::push(_luaState.get(), value);
+            stack::push(_luaState, value);
             lua_setglobal(_luaState.get(), key);
         }
         
@@ -114,13 +136,13 @@ namespace lua {
         /// @param filePath File path indicating which file will be executed
         void doFile(const std::string& filePath) {
             if (luaL_loadfile(_luaState.get(), filePath.c_str())) {
-                std::string message = stack::read<std::string>(_luaState.get(), -1);
-                stack::pop(_luaState.get(), 1);
+                std::string message = stack::read<std::string>(_luaState, -1);
+                stack::pop(_luaState, 1);
                 throw LoadError(message);
             }
             if (lua_pcall(_luaState.get(), 0, LUA_MULTRET, 0)) {
-                std::string message = stack::read<std::string>(_luaState.get(), -1);
-                stack::pop(_luaState.get(), 1);
+                std::string message = stack::read<std::string>(_luaState, -1);
+                stack::pop(_luaState, 1);
                 throw RuntimeError(message);
             }
         }
@@ -133,13 +155,13 @@ namespace lua {
         /// @param string   Command which will be executed
         void doString(const std::string& string) {
             if (luaL_loadstring(_luaState.get(), string.c_str())) {
-                std::string message = stack::read<std::string>(_luaState.get(), -1);
-                stack::pop(_luaState.get(), 1);
+                std::string message = stack::read<std::string>(_luaState, -1);
+                stack::pop(_luaState, 1);
                 throw LoadError(message);
             }
             if (lua_pcall(_luaState.get(), 0, LUA_MULTRET, 0)) {
-                std::string message = stack::read<std::string>(_luaState.get(), -1);
-                stack::pop(_luaState.get(), 1);
+                std::string message = stack::read<std::string>(_luaState, -1);
+                stack::pop(_luaState, 1);
                 throw RuntimeError(message);
             }
         }
@@ -149,7 +171,7 @@ namespace lua {
         ///
         /// @return Number of flushed items
         int flushStack() {
-            int count = stack::top(_luaState.get());
+            int count = stack::top(_luaState);
             LUASTATE_DEBUG_LOG("Flushed %d elements from stack\n", count);
             lua_settop(_luaState.get(), 0);
             return count;

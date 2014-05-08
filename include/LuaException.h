@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <string>
 #include <exception>
 
 namespace lua {

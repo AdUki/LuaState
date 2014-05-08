@@ -166,7 +166,7 @@ int main(int argc, char** argv)
     check(intValue, 10);
     check(boolValue, false);
     check(floatValue, 6.5);
-
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     state["tab"].set("a", 33);
@@ -242,7 +242,7 @@ int main(int argc, char** argv)
         return {
             [] () -> int { return 100; },
             [] () -> int { return 200; },
-            [] () -> int { return 300; }
+            [] () -> int { return 300; },
         };
     });
     int a, b, c;
@@ -251,7 +251,7 @@ int main(int argc, char** argv)
         return {
             [&] (int value) { a = value; },
             [&] (int value) { b = value; },
-            [&] (int value) { c = value; }
+            [&] (int value) { c = value; },
         };
     });
     
@@ -442,10 +442,21 @@ int main(int argc, char** argv)
         check(aaa[2], 2);
         check(aaa[3], 3);
         
-//        state.doString(" function getTabAndValue() return {a=10}, 20 end ");
-//        lua::tie(aaa, intValue) = state["getTabAndValue"]();
-//        check(aaa["a"], 10);
-//        check(intValue, 20);
+        state.doString(" function getTabAndValue() return {a=10}, 20 end ");
+        lua::Value v1, v2;
+        lua::tie(v1, v2) = state["getTabAndValue"]();
+        check(v1["a"], 10);
+        check(v2, 20);
+        
+        state.doString(" function getTabAndValue() return { a=10 } end ");
+        v1 = state["getTabAndValue"];
+        lua::stack::dump(state.getState().get());
+        check(v1()["a"], 10);
+
+        lua::Value v3 = state["tab"];
+        
+        v2 = v1();
+        check(v2["a"], 10);
     
     } // Nothing poped
     
@@ -485,13 +496,13 @@ int main(int argc, char** argv)
     
     ccc->set("newValue2", "ahoj");
     check(strcmp((*ccc)["newValue2"], "ahoj"), 0);
-    
+  
     delete ccc;
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     // Check if stack leaked, we must pop 0 values
     check(state.flushStack(), 0);
-    
+
     return 0;
 }
