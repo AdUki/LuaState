@@ -448,7 +448,6 @@ int main(int argc, char** argv)
         check(v1["a"], 10);
         check(v2, 20);
         
-        state.doString(" function getTabAndValue() return { a=10 } end ");
         v1 = state["getTabAndValue"];
         lua::stack::dump(state.getState().get());
         check(v1()["a"], 10);

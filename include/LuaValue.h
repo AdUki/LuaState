@@ -35,6 +35,8 @@ namespace lua {
         
         /// Indicates number pushed values which were pushed by this lua::Value instance
         mutable int _pushedValues;
+        
+        mutable int _groupedValues;
 
         /// Constructor for creating lua::Ref instances
         ///
@@ -44,6 +46,7 @@ namespace lua {
         , _deallocQueue(deallocQueue)
         , _stackTop(stack::top(_luaState))
         , _pushedValues(0)
+        , _groupedValues(0)
         {
         }
         
@@ -56,15 +59,42 @@ namespace lua {
         , _deallocQueue(deallocQueue)
         , _stackTop(stack::top(_luaState))
         , _pushedValues(1)
+        , _groupedValues(0)
         {
             stack::get_global(_luaState, name);
+        }
+        
+        template<typename ... Ts>
+        Value executeFunction(bool protectedCall, Ts... args) {
+            Value value(_luaState, _deallocQueue);
+            int fncStackPosition = stack::top(_luaState);
+            
+            // We will duplicate Lua function value, because it will get poped from stack
+            lua_pushvalue(_luaState.get(), _stackTop + _pushedValues - _groupedValues);
+            
+            stack::push(_luaState, args...);
+            if (protectedCall) {
+                if (lua_pcall(_luaState.get(), sizeof...(Ts), LUA_MULTRET, 0)) {
+                    const char* error = lua_tostring(_luaState.get(), -1);
+                    lua_pop(_luaState.get(), 1);
+                    throw RuntimeError(error);
+                }
+            }
+            else
+                lua_call(_luaState.get(), sizeof...(Ts), LUA_MULTRET);
+
+            value._groupedValues = stack::top(_luaState) - fncStackPosition - 1;
+            value._pushedValues += value._groupedValues + 1;
+            
+            return std::move(value);
         }
         
     public:
         
         /// Enable to initialize empty Value, so we can set it up later
         Value() : _luaState(nullptr) {}
-        
+
+        /// Constructor for returning values from functions
         Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int index)
         : Value(luaState, deallocQueue) {
             stack::dump(_luaState.get());
@@ -108,6 +138,7 @@ namespace lua {
             std::swap(_pushedValues, value._pushedValues);
             std::swap(_stackTop, value._stackTop);
             std::swap(_deallocQueue, value._deallocQueue);
+            std::swap(_groupedValues, value._groupedValues);
             
             return *this;
         }
@@ -123,7 +154,7 @@ namespace lua {
         Value operator[](T key) const & {
             stack::dump(_luaState.get());
             Value value(_luaState, _deallocQueue);
-            stack::get(_luaState, _stackTop + _pushedValues, key);
+            stack::get(_luaState, _stackTop + _pushedValues - _groupedValues, key);
             value._pushedValues = 1;
             
             return std::move(value);
@@ -134,8 +165,10 @@ namespace lua {
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
         template<typename T>
         Value&& operator[](T key) && {
+            stack::get(_luaState, _stackTop + _pushedValues - _groupedValues, key);
             ++_pushedValues;
-            stack::get(_luaState, _stackTop + _pushedValues - 1, key);
+            
+            _groupedValues = 0;
             
             return std::move(*this);
         }
@@ -145,18 +178,7 @@ namespace lua {
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
         Value operator()(Ts... args) & {
-            
-            Value value(_luaState, _deallocQueue);
-            int fncStackPosition = stack::top(_luaState);
-            
-            // We will duplicate Lua function value, because it will get poped from stack
-            lua_pushvalue(_luaState.get(), _stackTop + _pushedValues);
-            
-            stack::push(_luaState, args...);
-            lua_call(_luaState.get(), sizeof...(Ts), LUA_MULTRET);
-            value._pushedValues += stack::top(_luaState) - fncStackPosition;
-            
-            return std::move(value);
+            return executeFunction(false, args...);
         }
         
         /// Call given value.
@@ -168,7 +190,7 @@ namespace lua {
             stack::push(_luaState, args...);
 
             lua_call(_luaState.get(), sizeof...(Ts), LUA_MULTRET);
-            _pushedValues += stack::top(_luaState) - (_stackTop + _pushedValues);
+            _pushedValues += stack::top(_luaState) - (_stackTop + _pushedValues - _groupedValues);
             
             return std::move(*this);
         }
@@ -178,18 +200,7 @@ namespace lua {
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
         Value call(Ts... args) & {
-            
-            Value value(_luaState, _deallocQueue);
-            stack::push(_luaState, args...);
-            
-            if (lua_pcall(_luaState.get(), sizeof...(Ts), LUA_MULTRET, 0)) {
-                const char* error = lua_tostring(_luaState.get(), -1);
-                lua_pop(_luaState.get(), 1);
-                throw RuntimeError(error);
-            }
-            value._pushedValues += stack::top(_luaState) - (_stackTop + _pushedValues);
-            
-            return std::move(value);
+            return executeFunction(true, args...);
         }
         
         /// Protected call of given value.
@@ -205,7 +216,7 @@ namespace lua {
                 lua_pop(_luaState.get(), 1);
                 throw RuntimeError(error);
             }
-            _pushedValues += stack::top(_luaState) - (_stackTop + _pushedValues);
+            _pushedValues += stack::top(_luaState) - (_stackTop + _pushedValues - _groupedValues);
             
             return std::move(*this);
         }
@@ -215,7 +226,7 @@ namespace lua {
         /// @return Any value of type from LuaPrimitives.h
         template<typename T>
         operator T() const {
-            auto retValue(stack::read<T>(_luaState, _stackTop + _pushedValues));
+            auto retValue(stack::read<T>(_luaState, _stackTop + _pushedValues - _groupedValues));
             return retValue;
         }
 
@@ -229,7 +240,7 @@ namespace lua {
         void set(const K& key, const T& value) const {
             stack::push(_luaState, key);
             stack::push(_luaState, value);
-            lua_settable(_luaState.get(), _stackTop + _pushedValues);
+            lua_settable(_luaState.get(), _stackTop + _pushedValues - _groupedValues);
         }
 
         /// Check if queryied value is some type from LuaPrimitives.h file
@@ -237,7 +248,7 @@ namespace lua {
         /// @return true if yes false if no
         template <typename T>
         bool is() const {
-            return stack::check<T>(_luaState, _stackTop + _pushedValues);
+            return stack::check<T>(_luaState, _stackTop + _pushedValues - _groupedValues);
         }
         
         /// First check if lua::Value is type T and if yes stores it to value
@@ -250,7 +261,7 @@ namespace lua {
             if (is<T>() == false)
                 return false;
             else {
-                value = stack::read<T>(_luaState, _stackTop + _pushedValues);
+                value = stack::read<T>(_luaState, _stackTop + _pushedValues - _groupedValues);
                 return true;
             }
         }
