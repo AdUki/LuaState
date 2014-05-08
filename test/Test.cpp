@@ -271,6 +271,7 @@ int main(int argc, char** argv)
     flag = false;
     state.doString("badFnc = function(a,b) local var = a .. b end");
     try {
+        lua::Value aaa = state["goodFnc"];
         state["badFnc"].call(3);
         assert(false);
     } catch (lua::RuntimeError ex) {
@@ -310,6 +311,7 @@ int main(int argc, char** argv)
         state.doString("passToFunction = { a = 5, nested = { b = 4 } }");
         lua::Value luaValue = state["passToFunction"];
         check(luaValue["a"], 5);
+
         check(luaValue["nested"]["b"], 4);
         check(luaValue["a"], 5);
         
@@ -449,7 +451,6 @@ int main(int argc, char** argv)
         check(v2, 20);
         
         v1 = state["getTabAndValue"];
-        lua::stack::dump(state.getState().get());
         check(v1()["a"], 10);
 
         lua::Value v3 = state["tab"];
