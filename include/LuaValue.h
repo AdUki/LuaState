@@ -80,7 +80,8 @@ namespace lua {
 
         template<typename ... Ts>
         Value&& executeFunction(bool protectedCall, Ts... args) {
-            _pushedValues += callFunction(protectedCall, args...);
+            _groupedValues = callFunction(protectedCall, args...);
+            _pushedValues += _groupedValues;
             return std::move(*this);
         }
         
@@ -269,10 +270,10 @@ namespace lua {
     
     // compare operators
     //////////////////////////////////////////////////////////////////////////////////////////////////
-    inline bool operator==(const Value &value, const char *string)        { return strcmp(value, string) == 0; }
-    inline bool operator==(const char *string, const Value &value)        { return strcmp(value, string) == 0; }
-    inline bool operator==(const Value &value, const std::string& string) { return strcmp(value, string.c_str()) == 0; }
-    inline bool operator==(const std::string& string, const Value &value) { return strcmp(value, string.c_str()) == 0; }
+//    inline bool operator==(const Value &value, const char *string)        { return strcmp(value, string) == 0; }
+//    inline bool operator==(const char *string, const Value &value)        { return strcmp(value, string) == 0; }
+//    inline bool operator==(const Value &value, const std::string& string) { return strcmp(value, string.c_str()) == 0; }
+//    inline bool operator==(const std::string& string, const Value &value) { return strcmp(value, string.c_str()) == 0; }
     
     template <typename T>
     inline bool operator==(const Value &stateValue, const T& value) {
@@ -281,6 +282,51 @@ namespace lua {
     template <typename T>
     inline bool operator==(const T& value, const Value &stateValue) {
         return T(stateValue) == value;
+    }
+            
+    template <typename T>
+    inline bool operator!=(const Value &stateValue, const T& value) {
+        return T(stateValue) != value;
+    }
+    template <typename T>
+    inline bool operator!=(const T& value, const Value &stateValue) {
+        return T(stateValue) != value;
+    }
+    
+    template <typename T>
+    inline bool operator<(const Value &stateValue, const T& value) {
+        return T(stateValue) < value;
+    }
+    template <typename T>
+    inline bool operator<(const T& value, const Value &stateValue) {
+        return T(stateValue) < value;
+    }
+            
+    template <typename T>
+    inline bool operator<=(const Value &stateValue, const T& value) {
+        return T(stateValue) <= value;
+    }
+    template <typename T>
+    inline bool operator<=(const T& value, const Value &stateValue) {
+        return T(stateValue) <= value;
+    }
+            
+    template <typename T>
+    inline bool operator>(const Value &stateValue, const T& value) {
+        return T(stateValue) > value;
+    }
+    template <typename T>
+    inline bool operator>(const T& value, const Value &stateValue) {
+        return T(stateValue) > value;
+    }
+    
+    template <typename T>
+    inline bool operator>=(const Value &stateValue, const T& value) {
+        return T(stateValue) >= value;
+    }
+    template <typename T>
+    inline bool operator>=(const T& value, const Value &stateValue) {
+        return T(stateValue) >= value;
     }
 }
 

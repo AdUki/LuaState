@@ -1,30 +1,51 @@
 cmake_minimum_required(VERSION 2.8)
 
-set (ProjectName "LuaState")
+set (PROJECT_NAME "LuaState")
+project(${PROJECT_NAME})
 
-project(${ProjectName})
+################################################################################################
+################################################################################################
+
+# Must be executed BEFORE add_executable!
+macro(group_folder FOLDER)
+	file(GLOB SOURCE_GROUP ${FOLDER}/*.c ${FOLDER}/*.h ${FOLDER}/*.cpp ${FOLDER}/*.hpp)
+	string(REGEX REPLACE "/" "\\\\\\\\" SOURCE_GROUP_NAME ${FOLDER})
+	source_group(${SOURCE_GROUP_NAME} FILES ${SOURCE_GROUP})
+endmacro()
+
+macro(add_test FILE_NAME)
+	add_executable(${FILE_NAME} test/${FILE_NAME}.cpp test/test.h)
+	target_link_libraries(${FILE_NAME} ${LUA_LIBRARY})
+endmacro()
+
+################################################################################################
+################################################################################################
 
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11")
 
-# Must be executed BEFORE add_executable!
-macro(add_folder FOLDER)
-	file(GLOB SOURCE_GROUP ${FOLDER}/*.c ${FOLDER}/*.h ${FOLDER}/*.cpp ${FOLDER}/*.hpp)
-	string(REGEX REPLACE "/" "\\\\\\\\" SOURCE_GROUP_NAME ${FOLDER})
-	source_group(${SOURCE_GROUP_NAME} FILES ${SOURCE_GROUP})
-	set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE_GROUP})
-endmacro()
-
-add_folder("include")
-add_folder("test")
-
+group_folder("include")
+set(INCLUDE_FILES ${SOURCE_GROUP})
 include_directories(include)
 
-find_package(Lua51)
+# include_directories(test)
+
+find_package(LuaJIT)
 include_directories(${LUA_INCLUDE_DIR})
 
-add_executable(${ProjectName} ${SOURCE_FILES})
-target_link_libraries(${ProjectName} ${LUA_LIBRARY})
+################################################################################################
+################################################################################################
+
+add_test("state_test")
+add_test("types_test")
+add_test("get_test")
+add_test("set_test")
+add_test("ref_test")
+add_test("lambda_test")
+add_test("values_test")
+
+################################################################################################
+################################################################################################
 
 # Flags for MacOS which links directly or indirectly against LuaJIT
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

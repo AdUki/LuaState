@@ -20,8 +20,8 @@ namespace lua {
         class Pop {
             
             template<std::size_t... Is>
-            static std::tuple<Ts...> create(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int offset, traits::indexes<Is...>) {
-                return std::make_tuple(readValue(luaState, deallocQueue, Is + offset)...);
+            static std::tuple<Ts...> create(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int stackTop, traits::indexes<Is...>) {
+                return std::make_tuple(readValue(luaState, deallocQueue, Is + stackTop)...);
             }
             
         public:
@@ -30,11 +30,11 @@ namespace lua {
             }
         };
         
+        /// Function expects that number of elements in tuple and number of pushed values in stack are same. Applications takes care of this requirement by popping overlapping values before calling this function
         template<typename ... Ts>
-        inline std::tuple<Ts...> get_and_pop(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) {
+        inline std::tuple<Ts...> get_and_pop(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int stackTop) {
             constexpr size_t num = sizeof...(Ts);
-            int offset = top(luaState) - num + 1;
-            auto value = Pop<num, Ts...>::getTable(luaState, deallocQueue, offset);
+            auto value = Pop<num, Ts...>::getTable(luaState, deallocQueue, stackTop);
             return value;
         }
         
@@ -61,10 +61,24 @@ namespace lua {
         /// @param function     Function being called
 	    void operator= (const Value& value) {
             
+            int requiredValues = sizeof...(Ts) < value._pushedValues ? sizeof...(Ts) : value._pushedValues;
+            
+            // When there are more returned values than variables in tuple, we will clear values that are not needed
+            if (requiredValues < (value._groupedValues + 1)) {
+                
+                int currentStackTop = stack::top(value._luaState);
+                
+                // We will check if we haven't pushed some other new lua::Value to stack
+                if (value._stackTop + value._pushedValues == currentStackTop)
+                    stack::settop(value._luaState, value._stackTop + requiredValues);
+                else
+                    value._deallocQueue->push(detail::DeallocStackItem(value._stackTop, value._pushedValues));
+            }
+            
             // We will take pushed values and add them to returned lua::Values
             value._pushedValues = 0;
             
-            _tuple = stack::get_and_pop<typename std::remove_reference<Ts>::type...>(value._luaState, value._deallocQueue);
+            _tuple = stack::get_and_pop<typename std::remove_reference<Ts>::type...>(value._luaState, value._deallocQueue, value._stackTop + 1);
 	    }
 
 	};

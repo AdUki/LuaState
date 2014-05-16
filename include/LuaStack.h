@@ -36,17 +36,90 @@ namespace lua { namespace stack {
         lua_pushinteger(luaState.get(), value);
         return 1;
     }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, short int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
+        lua_pushinteger(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned short int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
+        lua_pushunsigned(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %ud\n", value);
+        lua_pushunsigned(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, long int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %ld\n", value);
+        lua_pushinteger(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned long int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %lud\n", value);
+        lua_pushunsigned(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, long long int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %lld\n", value);
+        lua_pushinteger(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned long long int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %llud\n", value);
+        lua_pushunsigned(luaState.get(), value);
+        return 1;
+    }
 
     template<>
-    inline int push(const std::shared_ptr<lua_State>& luaState, lua::String value) {
+    inline int push(const std::shared_ptr<lua_State>& luaState, char value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %c\n", value);
+        char string[2];
+        string[0] = value;
+        string[1] = '\0';
+        lua_pushstring(luaState.get(), string);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, const char* value) {
         LUASTATE_DEBUG_LOG("  PUSH  %s\n", value);
         lua_pushstring(luaState.get(), value);
         return 1;
     }
 
     template<>
-    inline int push(const std::shared_ptr<lua_State>& luaState, lua::Number value) {
+    inline int push(const std::shared_ptr<lua_State>& luaState, float value) {
         LUASTATE_DEBUG_LOG("  PUSH  %lf\n", value);
+        lua_pushnumber(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, double value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %lf\n", value);
+        lua_pushnumber(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, long double value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %Lf\n", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
@@ -76,12 +149,6 @@ namespace lua { namespace stack {
     inline int push(const std::shared_ptr<lua_State>& luaState, Table value) {
         LUASTATE_DEBUG_LOG("  PUSH  newTable\n");
         lua_newtable(luaState.get());
-        return 1;
-    }
-
-    template<>
-    inline int push(const std::shared_ptr<lua_State>& luaState, float value) {
-        push<lua::Number>(luaState, static_cast<lua::Number>(value));
         return 1;
     }
     
@@ -186,8 +253,43 @@ namespace lua { namespace stack {
     inline T read(const std::shared_ptr<lua_State>& luaState, int index);
 
     template<>
-    inline lua::Integer read(const std::shared_ptr<lua_State>& luaState, int index) {
+    inline int read(const std::shared_ptr<lua_State>& luaState, int index) {
         return lua_tointeger(luaState.get(), index);
+    }
+    
+    template<>
+    inline long read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<long>(lua_tointeger(luaState.get(), index));
+    }
+    
+    template<>
+    inline long long read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<long long>(lua_tointeger(luaState.get(), index));
+    }
+    
+    template<>
+    inline short read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<short>(lua_tointeger(luaState.get(), index));
+    }
+    
+    template<>
+    inline unsigned read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<unsigned>(lua_tounsigned(luaState.get(), index));
+    }
+    
+    template<>
+    inline unsigned short read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<unsigned short>(lua_tounsigned(luaState.get(), index));
+    }
+    
+    template<>
+    inline unsigned long read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<unsigned long>(lua_tounsigned(luaState.get(), index));
+    }
+    
+    template<>
+    inline unsigned long long read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<unsigned long long>(lua_tounsigned(luaState.get(), index));
     }
 
     template<>
@@ -196,8 +298,18 @@ namespace lua { namespace stack {
     }
 
     template<>
-    inline lua::Number read(const std::shared_ptr<lua_State>& luaState, int index) {
-        return lua_tonumber(luaState.get(), index);
+    inline double read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<double>(lua_tonumber(luaState.get(), index));
+    }
+    
+    template<>
+    inline long double read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<long double>(lua_tonumber(luaState.get(), index));
+    }
+    
+    template<>
+    inline float read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<float>(lua_tonumber(luaState.get(), index));
     }
 
     template<>
@@ -214,25 +326,15 @@ namespace lua { namespace stack {
     inline lua::Pointer read(const std::shared_ptr<lua_State>& luaState, int index) {
         return lua_touserdata(luaState.get(), index);
     }
-
+    
     template<>
-    inline float read(const std::shared_ptr<lua_State>& luaState, int index) {
-        return read<lua::Number>(luaState, index);
+    inline char read(const std::shared_ptr<lua_State>& luaState, int index) {
+        return static_cast<char>(lua_tostring(luaState.get(), index)[0]);
     }
     
     template<>
     inline std::string read(const std::shared_ptr<lua_State>& luaState, int index) {
         return read<lua::String>(luaState, index);
-    }
-    
-    template<>
-    inline long read(const std::shared_ptr<lua_State>& luaState, int index) {
-        return read<lua::Integer>(luaState, index);
-    }
-    
-    template<>
-    inline unsigned read(const std::shared_ptr<lua_State>& luaState, int index) {
-        return read<lua::Integer>(luaState, index);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
