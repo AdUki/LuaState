@@ -22,7 +22,6 @@ endmacro()
 ################################################################################################
 
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
-# set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11")
 set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++0x")
 
 
@@ -32,7 +31,7 @@ include_directories(include)
 
 # include_directories(test)
 
-find_package(LuaJIT)
+find_package(Lua51)
 include_directories(${LUA_INCLUDE_DIR})
 
 ################################################################################################

@@ -6,7 +6,6 @@ compiler:
 
 before_install:
  - git submodule update --init --recursive
- - sudo apt-get install -qq luajit
 
 install: 
  - mkdir build
