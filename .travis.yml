@@ -1,23 +1,23 @@
 language: cpp
 
 compiler:
-	- gcc
-	- clang
+ - gcc
+ - clang
 
 before_install:
-	- git submodule update --init --recursive
-	- sudo apt-get install -qq luajit
+ - git submodule update --init --recursive
+ - sudo apt-get install -qq luajit
 
 install: 
-	- mkdir build
-	- cd build
-	- cmake ..
+ - mkdir build
+ - cd build
+ - cmake ..
 
 script: 
-	- make
-	- ./state_test
-	- ./types_test
-	- ./get_test
-	- ./values_test
-	- ./ref_test
-	- ./lambda_test
+ - make
+ - ./state_test
+ - ./types_test
+ - ./get_test
+ - ./values_test
+ - ./ref_test
+ - ./lambda_test
