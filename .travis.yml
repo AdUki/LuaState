@@ -6,14 +6,15 @@ compiler:
 
 before_install:
  - git submodule update --init --recursive
+ - sudo apt-get install lua51 lua52 luajit 
 
 install: 
  - mkdir build
  - cd build
  - cmake ..
+ - make
 
 script: 
- - make
  - ./state_test
  - ./types_test
  - ./get_test
