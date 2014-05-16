@@ -30,9 +30,9 @@ set(INCLUDE_FILES ${SOURCE_GROUP})
 include_directories(include)
 
 find_package(Lua51)
-if (not LUA_FOUND)
+if (not ${LUA_FOUND})
 	message( FATAL_ERROR "Lua not found!" )
-endif (LUA_FOUND)
+endif(not ${LUA_FOUND})
 include_directories(${LUA_INCLUDE_DIR})
 
 ################################################################################################
