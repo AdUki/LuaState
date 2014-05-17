@@ -35,76 +35,56 @@ namespace lua { namespace stack {
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, int value) {
         LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
-        lua_pushinteger(luaState.get(), value);
+        lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, short int value) {
         LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
-        lua_pushinteger(luaState.get(), value);
-        return 1;
-    }
-    
-    template<>
-    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned short int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
-        
-#if LUA_VERSION_NUM > 501
-        lua_pushunsigned(luaState.get(), value);
-#else
-        lua_pushinteger(luaState.get(), value);
-#endif
-        return 1;
-    }
-    
-    template<>
-    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %ud\n", value);
-        
-#if LUA_VERSION_NUM > 501
-        lua_pushunsigned(luaState.get(), value);
-#else
-        lua_pushinteger(luaState.get(), value);
-#endif
-        return 1;
-    }
-    
-    template<>
-    inline int push(const std::shared_ptr<lua_State>& luaState, long int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %ld\n", value);
-
-#if LUA_VERSION_NUM > 501
-        lua_pushunsigned(luaState.get(), value);
-#else
-        lua_pushinteger(luaState.get(), value);
-#endif
-        return 1;
-    }
-    
-    template<>
-    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned long int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %lud\n", value);
-
-#if LUA_VERSION_NUM > 501
-        lua_pushunsigned(luaState.get(), value);
-#else
-        lua_pushinteger(luaState.get(), value);
-#endif
+        lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, long long int value) {
         LUASTATE_DEBUG_LOG("  PUSH  %lld\n", value);
-        lua_pushinteger(luaState.get(), value);
+        lua_pushnumber(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned short int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
+        lua_pushnumber(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %ud\n", value);
+        lua_pushnumber(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, long int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %ld\n", value);
+        lua_pushnumber(luaState.get(), value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(const std::shared_ptr<lua_State>& luaState, unsigned long int value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %lud\n", value);
+        lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, unsigned long long int value) {
         LUASTATE_DEBUG_LOG("  PUSH  %llud\n", value);
-        lua_pushunsigned(luaState.get(), value);
+        lua_pushnumber(luaState.get(), value);
         return 1;
     }
 
