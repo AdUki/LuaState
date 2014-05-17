@@ -1,16 +1,10 @@
 language: cpp
 
 env:
- - LUA=""
- - LUA="luajit"
-
-# Try using multiple Lua Implementations
-env:
- - TOOL="gcc"                  # Use native compiler (GCC usually)
- - TOOL="clang"                # Use clang
- - TOOL="i686-w64-mingw32"     # 32bit MinGW
- - TOOL="x86_64-w64-mingw32"   # 64bit MinGW
- - TOOL="arm-linux-gnueabihf"  # ARM hard-float (hf), linux
+  matrix:
+    - LUA=lua5.1 LIBLUA=liblua5.1-dev     LUA_INCDIR=/usr/include/lua5.1     LUA_LIB=lua5.1
+    - LUA=lua5.2 LIBLUA=liblua5.2-dev     LUA_INCDIR=/usr/include/lua5.2     LUA_LIB=lua5.2
+    - LUA=luajit LIBLUA=libluajit-5.1-dev LUA_INCDIR=/usr/include/luajit-2.0 LUA_LIB=luajit-5.1
 
 # Crosscompile builds may fail
 matrix:
@@ -20,19 +14,22 @@ matrix:
   - env: TOOL="arm-linux-gnueabihf"
 
 before_install:
- - git submodule update --init --recursive 
+  - git submodule update --init --recursive 
 
 # Install dependencies
-# install:
+install:
+  - sudo apt-get install $LUA -y
+  - sudo apt-get install $LIBLUA -y
+  - LUA_LIBDIR=`pkg-config $LUA --variable=libdir`
 
 before_script:
- - cmake .
+  - cmake .. -DLUA_LIBRARIES=$LUA_LIBDIR -DLUA_INCLUDE_DIR=$LUA_INCDIR
 
 script: 
- - make
- - ./state_test
- - ./types_test
- - ./get_test
- - ./values_test
- - ./ref_test
- - ./lambda_test
+  - make
+  - ./state_test
+  - ./types_test
+  - ./get_test
+  - ./values_test
+  - ./ref_test
+  - ./lambda_test

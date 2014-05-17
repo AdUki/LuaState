@@ -29,12 +29,12 @@ group_folder("include")
 set(INCLUDE_FILES ${SOURCE_GROUP})
 include_directories(include)
 
-find_package(Lua)
-if(LUA_FOUND)
+if(LUA_INCLUDE_DIR)
 	include_directories(${LUA_INCLUDE_DIR})
-else(LUA_FOUND)
-	message(FATAL_ERROR "Lua not found!")
-endif(LUA_FOUND)
+else(LUA_INCLUDE_DIR)
+	find_package(Lua)
+	include_directories(${LUA_INCLUDE_DIR})
+endif(LUA_INCLUDE_DIR)
 
 ################################################################################################
 ################################################################################################
