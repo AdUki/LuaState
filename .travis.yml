@@ -23,6 +23,8 @@ install:
   - LUA_LIBDIR=`pkg-config $LUA --variable=libdir`
 
 before_script:
+  - mkdir build
+  - cd build
   - cmake .. -DLUA_LIBRARIES=$LUA_LIBDIR -DLUA_INCLUDE_DIR=$LUA_INCDIR
 
 script: 
