@@ -26,9 +26,7 @@ before_install:
 # install:
 
 before_script:
- - mkdir build
- - cd build
- - cmake ..
+ - cmake .
 
 script: 
  - make
