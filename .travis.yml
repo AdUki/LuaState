@@ -1,5 +1,9 @@
 language: cpp
 
+env:
+ - LUA=""
+ - LUA="luajit"
+
 # Try using multiple Lua Implementations
 env:
  - TOOL="gcc"                  # Use native compiler (GCC usually)

@@ -21,7 +21,7 @@ endmacro()
 ################################################################################################
 ################################################################################################
 
-set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
+set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Tools/CMake")
 set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++0x")
 
 
@@ -29,11 +29,12 @@ group_folder("include")
 set(INCLUDE_FILES ${SOURCE_GROUP})
 include_directories(include)
 
-find_package(Lua51)
-if (not ${LUA_FOUND})
-	message( FATAL_ERROR "Lua not found!" )
-endif(not ${LUA_FOUND})
-include_directories(${LUA_INCLUDE_DIR})
+find_package(Lua)
+if(LUA_FOUND)
+	include_directories(${LUA_INCLUDE_DIR})
+else(LUA_FOUND)
+	message(FATAL_ERROR "Lua not found!")
+endif(LUA_FOUND)
 
 ################################################################################################
 ################################################################################################
