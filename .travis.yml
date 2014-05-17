@@ -23,16 +23,15 @@ before_install:
  - git submodule update --init --recursive 
 
 # Install dependencies
-install:
- - git clone git://github.com/LuaDist/Tools.git ~/_tools
- - ~/_tools/travis/travis install
+# install:
 
-# Bootstap
 before_script:
-  - ~/_tools/travis/travis bootstrap
+ - mkdir build
+ - cd build
+ - cmake ..
 
 script: 
- - ~/_tools/travis/travis build
+ - make
  - ./state_test
  - ./types_test
  - ./get_test
