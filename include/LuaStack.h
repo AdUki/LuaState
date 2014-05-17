@@ -276,22 +276,38 @@ namespace lua { namespace stack {
     
     template<>
     inline unsigned read(const std::shared_ptr<lua_State>& luaState, int index) {
+#if LUA_VERSION_NUM>501
         return static_cast<unsigned>(lua_tounsigned(luaState.get(), index));
+#else
+        return static_cast<unsigned>(lua_tointeger(luaState.get(), index));
+#endif
     }
     
     template<>
     inline unsigned short read(const std::shared_ptr<lua_State>& luaState, int index) {
+#if LUA_VERSION_NUM>501
         return static_cast<unsigned short>(lua_tounsigned(luaState.get(), index));
+#else
+        return static_cast<unsigned short>(lua_tointeger(luaState.get(), index));
+#endif
     }
     
     template<>
     inline unsigned long read(const std::shared_ptr<lua_State>& luaState, int index) {
+#if LUA_VERSION_NUM>501
         return static_cast<unsigned long>(lua_tounsigned(luaState.get(), index));
+#else
+        return static_cast<unsigned long>(lua_tointeger(luaState.get(), index));
+#endif
     }
     
     template<>
     inline unsigned long long read(const std::shared_ptr<lua_State>& luaState, int index) {
+#if LUA_VERSION_NUM>501
         return static_cast<unsigned long long>(lua_tounsigned(luaState.get(), index));
+#else
+        return static_cast<unsigned long long>(lua_tointeger(luaState.get(), index));
+#endif
     }
 
     template<>
