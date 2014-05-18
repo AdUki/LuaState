@@ -84,7 +84,8 @@ int main(int argc, char** argv)
     
     state.set("getFncs", []()
               -> std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> {
-                  return std::make_tuple(
+                // Error in gcc 4.8.1, we must again specify tuple parameters
+                  return std::make_tuple<std::function<int()>, std::function<int()>, std::function<int()>>(
                       [] () -> int { return 100; },
                       [] () -> int { return 200; },
                       [] () -> int { return 300; }

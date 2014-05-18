@@ -139,10 +139,10 @@ namespace lua {
             }
         }
         
-        // Default move constructor
+        /// Default move constructor
         Value(Value&&) = default;
         
-        // In assigment we swap values, so initialized values will be properly released
+        /// In assigment we swap values, so initialized values will be properly released
         Value& operator= (Value && value) {
             std::swap(_luaState, value._luaState);
             std::swap(_pushedValues, value._pushedValues);
@@ -153,11 +153,19 @@ namespace lua {
             return *this;
         }
 
-        // Default copy constructor, because gcc-4.7 compiler use it with std::make_tuple
-        // TODO: if later compilers will use move, delete it
-        Value(const Value& value) = default;
+        /// Some compilers use copy constructor with std::make_tuple. We will handle it like we are moving value
+        Value(const Value& value) {
+            _luaState = value._luaState;
+            _pushedValues = value._pushedValues;
+            _stackTop = value._stackTop;
+            _deallocQueue = value._deallocQueue;
+            _groupedValues = value._groupedValues;
+
+            // Set pushed values to zero, se we will not pop any values
+            value._pushedValues = 0;
+        }
             
-        // Deleted copy operator
+        /// Deleted copy operator
         Value& operator= (Value& value) = delete;
 
         /// With this function we will create lua::Ref instance

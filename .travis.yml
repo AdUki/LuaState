@@ -10,6 +10,13 @@ env:
     - LUA=luajit LIBLUA=libluajit-5.1-dev LUA_INCDIR=/usr/include/luajit-2.0 LUA_LIB=luajit-5.1
 
 before_install:
+
+  # Install gcc 4.8.1
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -qq
+  - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+
   # Clone submodules
   - git submodule update --init --recursive 
 

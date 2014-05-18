@@ -67,10 +67,13 @@ int main(int argc, char** argv)
     {
         lua::Value test;
         lua::tie(a, test, c) = state["getNestedValues"]();
-
         assert(a == 1 && c == 3);
+        printf("ideme stodvacet\n");
+        lua::stack::dump(state.getState().get());
         assert(test[1] == 1);
+        printf("ideme dvestodvacet\n");
         assert(test[2] == 2);
+        printf("ideme tristodvacet\n");
         assert(test[3] == 3);
     }
     
