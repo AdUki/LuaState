@@ -10,28 +10,20 @@ env:
     - LUA=lua5.2 LIBLUA=liblua5.2-dev     LUA_INCDIR=/usr/include/lua5.2     LUA_LIB=lua5.2
     - LUA=luajit LIBLUA=libluajit-5.1-dev LUA_INCDIR=/usr/include/luajit-2.0 LUA_LIB=luajit-5.1
 
-# Crosscompile and gcc builds may fail
-matrix:
- allow_failures:
-  - env: TOOL="gcc"
-  - env: TOOL="i686-w64-mingw32"
-  - env: TOOL="x86_64-w64-mingw32"
-  - env: TOOL="arm-linux-gnueabihf"
-
 before_install:
   # g++4.8.1
-  - if [ "$CXX" == "g++" ]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; fi
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -qq
+  - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
-  # submodules
+  # Clone submodules
   - git submodule update --init --recursive 
 
 # Install dependencies
 install:
-  # g++4.8.1
-  - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
 
-  # Lua library
+  # Install Lua library
   - sudo apt-get install $LUA -y
   - sudo apt-get install $LIBLUA -y
 
