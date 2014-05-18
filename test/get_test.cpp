@@ -44,15 +44,6 @@ int main(int argc, char** argv)
     assert(state["getInteger"]() == 10);
     assert(state["getValues"]() == 1);
     
-    {
-        lua::Value value = state["getInteger"];
-        assert(value() == 10);
-        assert(value() == 10);
-        assert(value() == 10);
-        assert(value() == 10);
-        assert(value() == 10);
-    }
-    
     int a, b, c, d;
     lua::tie(a) = state["getValues"]();
     assert(a == 1);

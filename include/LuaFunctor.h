@@ -37,7 +37,7 @@ namespace lua {
         }
         
         int call(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) {
-            Ret value = traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue));
+            Ret value = traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue, stack::top(luaState) - 1));
             return stack::push(luaState, value);
         }
     };
@@ -53,7 +53,7 @@ namespace lua {
         , function(function) {}
         
         int call(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) {
-            traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue));
+            traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue, stack::top(luaState)));
             return 0;
         }
     };

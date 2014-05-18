@@ -1,8 +1,7 @@
 language: cpp
 
 compiler:
- - gcc
- - clang
+  - clang
 
 env:
   matrix:
@@ -10,9 +9,10 @@ env:
     - LUA=lua5.2 LIBLUA=liblua5.2-dev     LUA_INCDIR=/usr/include/lua5.2     LUA_LIB=lua5.2
     - LUA=luajit LIBLUA=libluajit-5.1-dev LUA_INCDIR=/usr/include/luajit-2.0 LUA_LIB=luajit-5.1
 
-# Crosscompile builds may fail
+# Crosscompile and gcc builds may fail
 matrix:
  allow_failures:
+  - env: TOOL="gcc"
   - env: TOOL="i686-w64-mingw32"
   - env: TOOL="x86_64-w64-mingw32"
   - env: TOOL="arm-linux-gnueabihf"

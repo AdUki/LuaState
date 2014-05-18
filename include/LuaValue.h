@@ -86,7 +86,7 @@ namespace lua {
         }
         
         template<typename ... Ts>
-        Value executeFunction(bool protectedCall, Ts... args) const {
+        Value executeFunction(bool protectedCall, Ts... args) const & {
             Value value(_luaState, _deallocQueue);
             int returnedValues = _stackTop + _pushedValues - stack::top(_luaState);
             
@@ -152,9 +152,12 @@ namespace lua {
             
             return *this;
         }
-        
-        // Deleted copy constructor and operator
-        Value(const Value& value) = delete;
+
+        // Default copy constructor, because gcc-4.7 compiler use it with std::make_tuple
+        // TODO: if later compilers will use move, delete it
+        Value(const Value& value) = default;
+            
+        // Deleted copy operator
         Value& operator= (Value& value) = delete;
 
         /// With this function we will create lua::Ref instance
@@ -186,7 +189,7 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
-        Value operator()(Ts... args) const {
+        Value operator()(Ts... args) const & {
             return std::move(executeFunction(false, args...));
         }
         
@@ -202,7 +205,7 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
-        Value call(Ts... args) const {
+        Value call(Ts... args) const & {
             return executeFunction(true, args...);
         }
         
@@ -269,10 +272,6 @@ namespace lua {
     
     // compare operators
     //////////////////////////////////////////////////////////////////////////////////////////////////
-//    inline bool operator==(const Value &value, const char *string)        { return strcmp(value, string) == 0; }
-//    inline bool operator==(const char *string, const Value &value)        { return strcmp(value, string) == 0; }
-//    inline bool operator==(const Value &value, const std::string& string) { return strcmp(value, string.c_str()) == 0; }
-//    inline bool operator==(const std::string& string, const Value &value) { return strcmp(value, string.c_str()) == 0; }
     
     template <typename T>
     inline bool operator==(const Value &stateValue, const T& value) {

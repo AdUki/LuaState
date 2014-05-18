@@ -16,6 +16,8 @@ int main(int argc, char** argv)
     state.doString(createVariables);
     state.doString(createFunctions);
     
+    state.set("aa", [](){});
+    
     // Check if stack leaked, we must pop 0 values
     assert(state.flushStack() == 0);
     
