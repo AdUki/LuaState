@@ -15,8 +15,8 @@ int main(int argc, char** argv)
     lua::State state;
     state.doString(createVariables);
     state.doString(createFunctions);
-    
-    state.set("aa", [](){});
+
+    // TODO: create tests
     
     // Check if stack leaked, we must pop 0 values
     assert(state.flushStack() == 0);
