@@ -84,20 +84,20 @@ int main(int argc, char** argv)
     
     state.set("getFncs", []()
               -> std::tuple<std::function<int()>, std::function<int()>, std::function<int()>> {
-                  return {
+                  return std::make_tuple(
                       [] () -> int { return 100; },
                       [] () -> int { return 200; },
-                      [] () -> int { return 300; },
-                  };
+                      [] () -> int { return 300; }
+                  );
               });
     int a, b, c;
     state.set("setValues", [&a, &b, &c]()
               -> std::tuple<std::function<void(int)>, std::function<void(int)>, std::function<void(int)>> {
-                  return {
+                  return std::make_tuple(
                       [&] (int value) { a = value; },
                       [&] (int value) { b = value; },
-                      [&] (int value) { c = value; },
-                  };
+                      [&] (int value) { c = value; }
+                  );
               });
     
     state.doString("fnc1, fnc2, fnc3 = getFncs()"
