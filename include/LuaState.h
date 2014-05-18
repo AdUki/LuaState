@@ -48,6 +48,26 @@ namespace lua {
         
         detail::DeallocQueue* _deallocQueue;
         
+        /// Function for metatable "__call" field. It calls stored functor pushes return values to stack.
+        static int metatableCallFunction(lua_State* luaState) {
+            std::weak_ptr<lua_State> weakPtr = *(std::weak_ptr<lua_State> *)lua_topointer(luaState, lua_upvalueindex(1));
+            
+            std::shared_ptr<lua_State> instance = weakPtr.lock();
+            if (instance != nullptr) {
+                detail::DeallocQueue* deallocQueue = (detail::DeallocQueue *)lua_topointer(luaState, lua_upvalueindex(2));
+                BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
+                return functor->call(instance, deallocQueue);
+            }
+            return 0;
+        }
+        
+        /// Function for metatable "__gc" field. It deletes captured variables from stored functors.
+        static int metatableDeleteFunction(lua_State* luaState) {
+            BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
+            delete functor;
+            return 0;
+        }
+        
     public:
         
         /// Constructor creates new state and stores it to shared pointer.
@@ -79,26 +99,11 @@ namespace lua {
             // Set up metatable call operator for functors
             lua_pushlightuserdata(luaState, *weakPtr);
             lua_pushlightuserdata(luaState, _deallocQueue);
-            lua_pushcclosure(luaState, [](lua_State* luaState) -> int {
-                std::weak_ptr<lua_State> weakPtr = *(std::weak_ptr<lua_State> *)lua_topointer(luaState, lua_upvalueindex(1));
-                
-                std::shared_ptr<lua_State> instance = weakPtr.lock();
-                if (instance != nullptr) {
-                    detail::DeallocQueue* deallocQueue = (detail::DeallocQueue *)lua_topointer(luaState, lua_upvalueindex(2));
-                    BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
-                    return functor->call(instance, deallocQueue);
-                }
-                return 0;
-                
-            }, 2);
+            lua_pushcclosure(luaState, &State::metatableCallFunction, 2);
             lua_setfield(luaState, -2, "__call");
             
             // Set up metatable garbage collection for functors
-            lua_pushcfunction(luaState, [](lua_State* luaState) -> int {
-                BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
-                delete functor;
-                return 0;
-            });
+            lua_pushcfunction(luaState, &State::metatableDeleteFunction);
             lua_setfield(luaState, -2, "__gc");
             
             // Pop metatable

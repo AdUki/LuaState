@@ -10,23 +10,40 @@
 
 namespace lua {
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
     namespace stack {
         
-        inline lua::Value readValue(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int index) {
-            return lua::Value(luaState, deallocQueue, index);
+        /// Function get single value from lua stack
+        template<typename T>
+        inline T readValue(const std::shared_ptr<lua_State>& luaState,
+                                    detail::DeallocQueue* deallocQueue,
+                                    int index)
+        {
+            return std::move(lua::Value(luaState, deallocQueue, index));
         }
         
+        //////////////////////////////////////////////////////////////////////////////////////////////////
         template<std::size_t I, typename ... Ts>
         class Pop {
             
+            /// Function creates indexes for mutli values and get them from stack
             template<std::size_t... Is>
-            static std::tuple<Ts...> create(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int stackTop, traits::indexes<Is...>) {
-                return std::make_tuple(readValue(luaState, deallocQueue, Is + stackTop)...);
+            static std::tuple<Ts...> unpackMultiValues(const std::shared_ptr<lua_State>& luaState,
+                                            detail::DeallocQueue* deallocQueue,
+                                            int stackTop,
+                                            traits::indexes<Is...>)
+            {
+                return std::make_tuple(readValue<Ts>(luaState, deallocQueue, Is + stackTop)...);
             }
             
         public:
-            static std::tuple<Ts...> getTable(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int offset) {
-                return create(luaState, deallocQueue, offset, typename traits::indexes_builder<I>::index());
+
+            /// Function get multiple return values from lua stack
+            static std::tuple<Ts...> getMultiValues(const std::shared_ptr<lua_State>& luaState,
+                                              detail::DeallocQueue* deallocQueue,
+                                              int offset)
+            {
+                return unpackMultiValues(luaState, deallocQueue, offset, typename traits::indexes_builder<I>::index());
             }
         };
         
@@ -34,13 +51,14 @@ namespace lua {
         template<typename ... Ts>
         inline std::tuple<Ts...> get_and_pop(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int stackTop) {
             constexpr size_t num = sizeof...(Ts);
-            auto value = Pop<num, Ts...>::getTable(luaState, deallocQueue, stackTop);
+            auto value = Pop<num, Ts...>::getMultiValues(luaState, deallocQueue, stackTop);
             return value;
         }
         
         
     }
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////
     /// Class for automaticly cas lua::Function instance to multiple return values with lua::tie
 	template <typename ... Ts>
 	class Return

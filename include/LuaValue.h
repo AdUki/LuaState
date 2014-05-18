@@ -86,7 +86,7 @@ namespace lua {
         }
         
         template<typename ... Ts>
-        Value executeFunction(bool protectedCall, Ts... args) const & {
+        Value executeFunction(bool protectedCall, Ts... args) const {
             Value value(_luaState, _deallocQueue);
             int returnedValues = _stackTop + _pushedValues - stack::top(_luaState);
             
@@ -161,7 +161,7 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
         template<typename T>
-        Value operator[](T key) const & {
+        Value operator[](T key) const {
             Value value(_luaState, _deallocQueue);
             stack::get(_luaState, _stackTop + _pushedValues - _groupedValues, key);
             value._pushedValues = 1;
@@ -186,7 +186,7 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
-        Value operator()(Ts... args) const & {
+        Value operator()(Ts... args) const {
             return std::move(executeFunction(false, args...));
         }
         
@@ -202,7 +202,7 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
-        Value call(Ts... args) const & {
+        Value call(Ts... args) const {
             return executeFunction(true, args...);
         }
         
@@ -219,8 +219,7 @@ namespace lua {
         /// @return Any value of type from LuaPrimitives.h
         template<typename T>
         operator T() const {
-            auto retValue(stack::read<T>(_luaState, _stackTop + _pushedValues - _groupedValues));
-            return retValue;
+            return stack::read<T>(_luaState, _stackTop + _pushedValues - _groupedValues);
         }
 
         /// Set values to table to the given key.

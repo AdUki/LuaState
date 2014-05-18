@@ -44,6 +44,15 @@ int main(int argc, char** argv)
     assert(state["getInteger"]() == 10);
     assert(state["getValues"]() == 1);
     
+    {
+        lua::Value value = state["getInteger"];
+        assert(value() == 10);
+        assert(value() == 10);
+        assert(value() == 10);
+        assert(value() == 10);
+        assert(value() == 10);
+    }
+    
     int a, b, c, d;
     lua::tie(a) = state["getValues"]();
     assert(a == 1);
@@ -67,6 +76,7 @@ int main(int argc, char** argv)
     {
         lua::Value test;
         lua::tie(a, test, c) = state["getNestedValues"]();
+
         assert(a == 1 && c == 3);
         assert(test[1] == 1);
         assert(test[2] == 2);

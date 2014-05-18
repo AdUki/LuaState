@@ -14,7 +14,7 @@ macro(group_folder FOLDER)
 endmacro()
 
 macro(add_test FILE_NAME)
-	add_executable(${FILE_NAME} test/${FILE_NAME}.cpp test/test.h)
+	add_executable(${FILE_NAME} test/${FILE_NAME}.cpp test/test.h ${INCLUDE_FILES})
 	target_link_libraries(${FILE_NAME} ${LUA_LIBRARIES})
 endmacro()
 
