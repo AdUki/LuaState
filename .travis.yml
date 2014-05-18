@@ -2,6 +2,7 @@ language: cpp
 
 compiler:
   - clang
+  - gcc
 
 env:
   matrix:
@@ -18,10 +19,19 @@ matrix:
   - env: TOOL="arm-linux-gnueabihf"
 
 before_install:
+  # g++4.8.1
+  - if [ "$CXX" == "g++" ]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; fi
+
+  # submodules
   - git submodule update --init --recursive 
 
 # Install dependencies
 install:
+  # g++4.8.1
+  - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
+
+  # Lua library
   - sudo apt-get install $LUA -y
   - sudo apt-get install $LIBLUA -y
 
