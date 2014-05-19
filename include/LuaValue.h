@@ -64,6 +64,8 @@ namespace lua {
         {
             stack::get_global(_luaState, name);
             ++_pushedValues;
+            
+            *_refCounter = *_refCounter + 1;
         }
         
         template<typename ... Ts>
@@ -166,22 +168,22 @@ namespace lua {
             
             return *this;
         }
-            
+
+        /// Deleted copy assignment
+        Value& operator= (const Value& value) = default;
+
         /// Some compilers use copy constructor with std::make_tuple. We will use reference counter to correctly deallocate values from stack
-        Value& operator= (const Value& value) {
+        Value(const Value& value) {
             _luaState = value._luaState;
             _pushedValues = value._pushedValues;
             _stackTop = value._stackTop;
             _deallocQueue = value._deallocQueue;
             _groupedValues = value._groupedValues;
             _refCounter = value._refCounter;
-
+            
             // We will increment reference count
             *_refCounter = *_refCounter + 1;
         }
-
-        /// Copy assignmet will use copy operator
-        Value(const Value& value) { operator=(value); }
 
         /// With this function we will create lua::Ref instance
         ///
