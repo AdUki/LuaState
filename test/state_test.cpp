@@ -22,14 +22,14 @@ int main(int argc, char** argv)
         state.doString("we will invoke syntax error");
         assert(false);
     } catch (lua::LoadError ex) {
-        printf("%s ", ex.what());
+        printf("%s\n", ex.what());
     }
     
     try {
         state.doString("nofunction()");
         assert(false);
     } catch (lua::RuntimeError ex) {
-        printf("%s ", ex.what());
+        printf("%s\n", ex.what());
     }
     
     std::ofstream luaFile;
@@ -53,7 +53,7 @@ int main(int argc, char** argv)
         state.doFile("test.lua");
         assert(false);
     } catch (lua::RuntimeError ex) {
-        printf("%s ", ex.what());
+        printf("%s\n", ex.what());
     }
     
     // Check if stack leaked, we must pop 0 values

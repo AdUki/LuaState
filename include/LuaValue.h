@@ -36,7 +36,11 @@ namespace lua {
         /// Indicates number pushed values which were pushed by this lua::Value instance
         mutable int _pushedValues;
         
+        /// Indicates multi returned values, because the we want first returned value and not the last
         mutable int _groupedValues;
+
+        /// Fix for gcc compilers, because they use copy constructor while handling std::make_tuple call and therefore will create more instances of same value, so destructors will be called more than once
+        mutable std::shared_ptr<int> _refCounter;
 
         /// Constructor for creating lua::Ref instances
         ///
@@ -47,6 +51,7 @@ namespace lua {
         , _stackTop(stack::top(_luaState))
         , _pushedValues(0)
         , _groupedValues(0)
+        , _refCounter(std::make_shared<int>(0))
         {
         }
         
@@ -111,14 +116,22 @@ namespace lua {
         {
             _stackTop = index - 1;
             _pushedValues = 1;
+            *_refCounter = 1;
         }
         
         /// Upon deletion we will restore stack to original value
         ~Value() {
             if (_luaState != nullptr) {
 
+                // Check reference counter
+                if (*_refCounter > 1) {
+                    *_refCounter = *_refCounter - 1;
+                    return;
+                }
+
                 // Check because of exceptions during function calls
                 int currentStackTop = stack::top(_luaState);
+
                 if (_pushedValues == 0 || currentStackTop == 0 || currentStackTop - _stackTop < _pushedValues)
                     return;
                 
@@ -149,24 +162,26 @@ namespace lua {
             std::swap(_stackTop, value._stackTop);
             std::swap(_deallocQueue, value._deallocQueue);
             std::swap(_groupedValues, value._groupedValues);
+            std::swap(_refCounter, value._refCounter);
             
             return *this;
         }
-
-        /// Some compilers use copy constructor with std::make_tuple. We will handle it like we are moving value
-        Value(const Value& value) {
+            
+        /// Some compilers use copy constructor with std::make_tuple. We will use reference counter to correctly deallocate values from stack
+        Value& operator= (const Value& value) {
             _luaState = value._luaState;
             _pushedValues = value._pushedValues;
             _stackTop = value._stackTop;
             _deallocQueue = value._deallocQueue;
             _groupedValues = value._groupedValues;
+            _refCounter = value._refCounter;
 
-            // Set pushed values to zero, se we will not pop any values
-            value._pushedValues = 0;
+            // We will increment reference count
+            *_refCounter = *_refCounter + 1;
         }
-            
-        /// Deleted copy operator
-        Value& operator= (Value& value) = delete;
+
+        /// Copy assignmet will use copy operator
+        Value(const Value& value) { operator=(value); }
 
         /// With this function we will create lua::Ref instance
         ///
