@@ -26,8 +26,6 @@ int main(int argc, char** argv)
     copyRef = tabRef;
     assert(copyRef.unref()["a"] == 'a');
         
-    // Check if stack leaked, we must pop 0 values
-    assert(state.flushStack() == 0);
-    
+    state.checkMemLeaks();
     return 0;
 }

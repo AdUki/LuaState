@@ -8,6 +8,15 @@
 
 #pragma once
 
+#ifdef LUASTATE_DEBUG_MODE
+static int REF_COUNTER = 0;
+#   define LUASTATE_ADD_REF_COUNT() REF_COUNTER++
+#   define LUASTATE_REM_REF_COUNT() REF_COUNTER--
+#else
+#   define LUASTATE_ADD_REF_COUNT()
+#   define LUASTATE_REM_REF_COUNT()
+#endif
+
 namespace lua {
     
     class Value;
@@ -40,7 +49,7 @@ namespace lua {
         mutable int _groupedValues;
 
         /// Fix for gcc compilers, because they use copy constructor while handling std::make_tuple call and therefore will create more instances of same value, so destructors will be called more than once
-        mutable std::shared_ptr<int> _refCounter;
+        int* _refCounter;
 
         /// Constructor for creating lua::Ref instances
         ///
@@ -51,8 +60,9 @@ namespace lua {
         , _stackTop(stack::top(_luaState))
         , _pushedValues(0)
         , _groupedValues(0)
-        , _refCounter(std::make_shared<int>(0))
+        , _refCounter(new int(0))
         {
+            LUASTATE_ADD_REF_COUNT();
         }
         
         /// Constructor for lua::State class. Whill get global in _G table with name
@@ -110,7 +120,7 @@ namespace lua {
     public:
         
         /// Enable to initialize empty Value, so we can set it up later
-        Value() : _luaState(nullptr) {}
+        Value() : _luaState(nullptr), _pushedValues(0) {}
 
         /// Constructor for returning values from functions
         Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int index)
@@ -123,35 +133,39 @@ namespace lua {
         
         /// Upon deletion we will restore stack to original value
         ~Value() {
-            if (_luaState != nullptr) {
+            // Check if there was value assigned
+            if (_luaState == nullptr)
+                return;
 
-                // Check reference counter
-                if (*_refCounter > 1) {
-                    *_refCounter = *_refCounter - 1;
-                    return;
-                }
-
-                // Check because of exceptions during function calls
-                int currentStackTop = stack::top(_luaState);
-
-                if (_pushedValues == 0 || currentStackTop == 0 || currentStackTop - _stackTop < _pushedValues)
-                    return;
-                
-                // We will check if we haven't pushed some other new lua::Value to stack
-                if (_stackTop + _pushedValues == currentStackTop) {
-                    
-                    // We will check deallocation priority queue, if there are some lua::Value instances to be deleted
-                    while (!_deallocQueue->empty() && _deallocQueue->top().stackCap == _stackTop) {
-                        _stackTop -= _deallocQueue->top().numElements;
-                        _deallocQueue->pop();
-                    }
-                    stack::settop(_luaState, _stackTop);
-                }
-                // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
-                // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
-                else
-                    _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
+            // Check reference counter
+            if (*_refCounter > 1) {
+                *_refCounter = *_refCounter - 1;
+                return;
             }
+            else {
+                LUASTATE_REM_REF_COUNT();
+                delete _refCounter;
+            }
+            
+            // Check stack and pushed values function boundaries
+            int currentStackTop = stack::top(_luaState);
+            if (currentStackTop == 0 || _pushedValues == 0 || currentStackTop - _stackTop < _pushedValues)
+                return;
+            
+            // We will check if we haven't pushed some other new lua::Value to stack
+            if (_stackTop + _pushedValues == currentStackTop) {
+                
+                // We will check deallocation priority queue, if there are some lua::Value instances to be deleted
+                while (!_deallocQueue->empty() && _deallocQueue->top().stackCap == _stackTop) {
+                    _stackTop -= _deallocQueue->top().numElements;
+                    _deallocQueue->pop();
+                }
+                stack::settop(_luaState, _stackTop);
+            }
+            // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
+            // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
+            else
+                _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
         }
         
         /// Default move constructor
@@ -170,7 +184,7 @@ namespace lua {
         }
 
         /// Deleted copy assignment
-        Value& operator= (const Value& value) = default;
+        Value& operator= (const Value& value) = delete;
 
         /// Some compilers use copy constructor with std::make_tuple. We will use reference counter to correctly deallocate values from stack
         Value(const Value& value) {

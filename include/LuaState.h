@@ -172,14 +172,19 @@ namespace lua {
         }
 
 #ifdef LUASTATE_DEBUG_MODE
-        /// Flush all elements from stack
-        ///
-        /// @return Number of flushed items
-        int flushStack() {
+        
+        /// Flush all elements from stack and check ref counting
+        void checkMemLeaks() {
+            
+            // Check for memory leaks during ref counting, should be zero
+            LUASTATE_DEBUG_LOG("Reference counter is %d\n", REF_COUNTER);
+            assert(REF_COUNTER == 0);
+            
+            // Check if there are any values from stack, should be zero
             int count = stack::top(_luaState);
             LUASTATE_DEBUG_LOG("Flushed %d elements from stack\n", count);
             lua_settop(_luaState.get(), 0);
-            return count;
+            assert(count == 0);
         }
 #endif
         

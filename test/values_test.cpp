@@ -152,8 +152,6 @@ int main(int argc, char** argv)
     // Test moving values
     // TODO: add tests
     
-    // Check if stack leaked, we must pop 0 values
-    assert(state.flushStack() == 0);
-    
+    state.checkMemLeaks();
     return 0;
 }

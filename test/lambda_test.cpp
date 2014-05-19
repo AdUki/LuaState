@@ -152,8 +152,6 @@ int main(int argc, char** argv)
         assert(nestedLuaValue["b"] == 4);
     }
     
-    // assert if stack leaked, we must pop 0 values
-    assert(state.flushStack() == 0);
-
+    state.checkMemLeaks();
     return 0;
 }

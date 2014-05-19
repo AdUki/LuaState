@@ -56,8 +56,6 @@ int main(int argc, char** argv)
         printf("%s\n", ex.what());
     }
     
-    // Check if stack leaked, we must pop 0 values
-    assert(state.flushStack() == 0);
-    
+    state.checkMemLeaks();
     return 0;
 }

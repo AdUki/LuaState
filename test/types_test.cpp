@@ -246,8 +246,6 @@ int main(int argc, char** argv)
     assert(strcmp(charString = state["text"], "hello") == 0);
     assert(strcmp(charString = state["text"], "bannana") != 0);
     
-    // Check if stack leaked, we must pop 0 values
-    assert(state.flushStack() == 0);
-
+    state.checkMemLeaks();
     return 0;
 }

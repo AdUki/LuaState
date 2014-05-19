@@ -73,8 +73,7 @@ int main(int argc, char** argv)
         assert(test[3] == 3);
     }
     
-    // Check if stack leaked, we must pop 0 values
-    assert(state.flushStack() == 0);
+    state.checkMemLeaks();
     
     return 0;
 }

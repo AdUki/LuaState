@@ -18,8 +18,6 @@ int main(int argc, char** argv)
 
     // TODO: create tests
     
-    // Check if stack leaked, we must pop 0 values
-    assert(state.flushStack() == 0);
-    
+    state.checkMemLeaks();
     return 0;
 }
