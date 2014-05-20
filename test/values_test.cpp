@@ -149,8 +149,21 @@ int main(int argc, char** argv)
     assert(*v3 == 'a');
     delete v3;
     
-    // Test moving values
-    // TODO: add tests
+    // Test moving and copying values to functions
+    {
+        auto constCopyValueFnc = [](const lua::Value&  value){ assert(value == 3); };
+        auto copyValueFnc =      [](const lua::Value&  value){ assert(value == 3); };
+        auto moveValueFnc =      [](      lua::Value&& value){ assert(value == 3); };
+        
+        constCopyValueFnc(state["table"]["three"]);
+        copyValueFnc(state["table"]["three"]);
+        moveValueFnc(state["table"]["three"]);
+        
+        lua::Value value = state["table"]["three"];
+        constCopyValueFnc(value);
+        copyValueFnc(value);
+        moveValueFnc(state["table"]["three"]);
+    }
     
     state.checkMemLeaks();
     return 0;

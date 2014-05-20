@@ -44,6 +44,7 @@ int main(int argc, char** argv)
     assert(state["getInteger"]() == 10);
     assert(state["getValues"]() == 1);
     
+    // Test function multi return values
     int a, b, c, d;
     lua::tie(a) = state["getValues"]();
     assert(a == 1);
@@ -72,6 +73,42 @@ int main(int argc, char** argv)
         assert(test[2] == 2);
         assert(test[3] == 3);
     }
+    
+    // Test get function
+    lua::Integer integerValue;
+    lua::Number numberValue;
+    lua::String stringValue;
+    lua::Boolean boolValue = false;
+    
+    if (state["integer"].get(stringValue))
+        assert(false);
+    if (state["integer"].get(integerValue))
+        assert(integerValue == 10);
+    else
+        assert(false);
+    
+    if (state["text"].get(integerValue))
+        assert(false);
+    if (state["text"].get(stringValue))
+        assert(strcmp(stringValue, "hello") == 0);
+    else
+        assert(false);
+    
+    if (state["boolean"].get(stringValue))
+        assert(false);
+    if (state["boolean"].get(boolValue))
+        assert(boolValue == true);
+    else
+        assert(false);
+    
+    if (state["number"].get(stringValue))
+        assert(false);
+    if (state["number"].get(integerValue))
+        assert(false);
+    if (state["number"].get(numberValue))
+        assert(numberValue == 2.5);
+    else
+        assert(false);
     
     state.checkMemLeaks();
     
