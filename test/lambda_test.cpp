@@ -16,6 +16,11 @@ const char* getHello()
     return "Hello return\n";
 }
 
+int subValues(int a, int b)
+{
+    return a - b;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 struct Resource {
     static int refCounter;
@@ -46,28 +51,40 @@ struct Foo {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
+    // Create Lua state
     lua::State state;
-
-    // TODO: organize code
     
     int intValue;
     lua::String cText;
     
+    // Test normal function bind
+    state.set("lambda", &getHello);
+    assert(strcmp(state["lambda"](), getHello()) == 0);
+    
+    // Test lambda captures
     bool flag = false;
     state.set("lambda", [&flag]() { flag = true; } );
     state.doString("lambda()");
     assert(flag == true);
     
-    state.set("lambda", &getHello);
-    const char* msg = state["lambda"]();
-    assert(strcmp(msg, getHello()) == 0);
+    // Test function and lambda arguments
+    state.set("lambda", &subValues);
+    assert(state["lambda"](8, 5) == 3);
     
-    state.set("lambda", [](int a, int b) -> int { return a + b; } );
-    state.doString("a = lambda(4, 8)");
-    assert(state["a"] == 12);
-    intValue = state["lambda"](2, 7);
-    assert(intValue == 9);
+    state.set("lambda", [](int a, int b, int c, int d) -> int {
+        return a + b + c + d;
+    });
+    state.doString("a = lambda(4, 8, 12, 14)");
+    assert(state["a"] == 38);
+    assert(state["lambda"](2, 7) == 9);
     
+    state.set("lambda", [&intValue](int a, int b, int c, int d) {
+        intValue = a + b + c + d;
+    });
+    state.doString("a = lambda(4, 8, 12, 14)");
+    assert(intValue == 38);
+    
+    // Test multi return
     state.set("lambda", []() -> std::tuple<lua::Integer, lua::String> {
         return std::tuple<lua::Integer, lua::String>(23, "abc");
     });
@@ -76,6 +93,7 @@ int main(int argc, char** argv)
     assert(intValue == 23);
     assert(strcmp(cText, "abc") == 0);
     
+    // Test class binding
     Foo foo(state);
     state["Foo_setA"](10);
     state["Foo_setB"](20);
