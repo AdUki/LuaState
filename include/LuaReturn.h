@@ -13,18 +13,21 @@ namespace lua {
     //////////////////////////////////////////////////////////////////////////////////////////////////
     namespace stack {
         
-        /// Function get single value from lua stack
-        template<typename T>
-        inline T readValue(const std::shared_ptr<lua_State>& luaState,
-                                    detail::DeallocQueue* deallocQueue,
-                                    int index)
-        {
-            return std::move(lua::Value(luaState, deallocQueue, index));
-        }
         
         //////////////////////////////////////////////////////////////////////////////////////////////////
         template<std::size_t I, typename ... Ts>
         class Pop {
+            
+            friend class lua::Value;
+            
+            /// Function get single value from lua stack
+            template<typename T>
+            static inline T readValue(const std::shared_ptr<lua_State>& luaState,
+                               detail::DeallocQueue* deallocQueue,
+                               int index)
+            {
+                return std::move(lua::Value(luaState, nullptr, index));
+            }
             
             /// Function creates indexes for mutli values and get them from stack
             template<std::size_t... Is>
@@ -93,8 +96,9 @@ namespace lua {
                     value._deallocQueue->push(detail::DeallocStackItem(value._stackTop, value._pushedValues));
             }
             
-            // We will take pushed values and add them to returned lua::Values
-            value._pushedValues = 0;
+            // We will take pushed values and distribute them to returned lua::Values
+            if (value._deallocQueue != nullptr)
+                value._pushedValues = 0;
             
             _tuple = stack::get_and_pop<typename std::remove_reference<Ts>::type...>(value._luaState, value._deallocQueue, value._stackTop + 1);
 	    }

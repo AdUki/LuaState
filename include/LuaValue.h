@@ -54,6 +54,7 @@ namespace lua {
         /// Constructor for creating lua::Ref instances
         ///
         /// @param luaState     Shared pointer of Lua state
+        /// @param deallocQueue Queue for deletion values initialized from given luaState
         Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue)
         : _luaState(luaState)
         , _deallocQueue(deallocQueue)
@@ -68,6 +69,7 @@ namespace lua {
         /// Constructor for lua::State class. Whill get global in _G table with name
         ///
         /// @param luaState     Shared pointer of Lua state
+        /// @param deallocQueue Queue for deletion values initialized from given luaState
         /// @param name         Key of global value
         Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, const char* name)
         : Value(luaState, deallocQueue)
@@ -120,9 +122,13 @@ namespace lua {
     public:
         
         /// Enable to initialize empty Value, so we can set it up later
-        Value() : _luaState(nullptr), _pushedValues(0) {}
-
+        Value() : _luaState(nullptr), _deallocQueue(nullptr), _pushedValues(0) {}
+            
         /// Constructor for returning values from functions
+        ///
+        /// @param luaState     Shared pointer of Lua state
+        /// @param deallocQueue Queue for deletion values initialized from given luaState
+        /// @param index        Index of value which is already in stack
         Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int index)
         : Value(luaState, deallocQueue)
         {
@@ -134,7 +140,7 @@ namespace lua {
         /// Upon deletion we will restore stack to original value
         ~Value() {
             // Check if there was value assigned
-            if (_luaState == nullptr)
+            if (_luaState == nullptr || _deallocQueue == nullptr)
                 return;
 
             // Check reference counter
@@ -164,8 +170,14 @@ namespace lua {
             }
             // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
             // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
-            else
-                _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
+            else {
+                
+//                if(!_deallocQueue->empty())
+//                    assert(_stackTop + _pushedValues == _deallocQueue->top().stackCap);
+                
+                if (_deallocQueue->empty() || _stackTop + _pushedValues != _deallocQueue->top().stackCap)
+                    _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
+            }
         }
         
         /// Default move constructor

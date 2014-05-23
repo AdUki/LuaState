@@ -24,7 +24,7 @@ namespace lua
     
     typedef const char* String;
     
-    typedef std::nullptr_t Null;
+    typedef std::nullptr_t Nil;
     
     typedef void* Pointer;
 }

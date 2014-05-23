@@ -34,56 +34,56 @@ namespace lua { namespace stack {
 
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %d", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, short int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %d", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, long long int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %lld\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %lld", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, unsigned short int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %d\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %d", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, unsigned int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %ud\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %ud", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, long int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %ld\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %ld", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, unsigned long int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %lud\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %lud", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, unsigned long long int value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %llud\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %llud", value);
         lua_pushnumber(luaState.get(), value);
         return 1;
     }
@@ -100,7 +100,7 @@ namespace lua { namespace stack {
     
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, const char* value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %s\n", value);
+        LUASTATE_DEBUG_LOG("  PUSH  %s", value);
         lua_pushstring(luaState.get(), value);
         return 1;
     }
@@ -128,13 +128,13 @@ namespace lua { namespace stack {
 
     template<>
     inline int push(const std::shared_ptr<lua_State>& luaState, lua::Boolean value) {
-        LUASTATE_DEBUG_LOG("  PUSH  %s\n", value ? "true" : "false");
+        LUASTATE_DEBUG_LOG("  PUSH  %s", value ? "true" : "false");
         lua_pushboolean(luaState.get(), value);
         return 1;
     }
 
     template<>
-    inline int push(const std::shared_ptr<lua_State>& luaState, lua::Null value) {
+    inline int push(const std::shared_ptr<lua_State>& luaState, lua::Nil value) {
         LUASTATE_DEBUG_LOG("  PUSH  null\n");
         lua_pushnil(luaState.get());
         return 1;
@@ -212,7 +212,7 @@ namespace lua { namespace stack {
     }
     
     template<>
-    inline bool check<lua::Null>(const std::shared_ptr<lua_State>& luaState, int index)
+    inline bool check<lua::Nil>(const std::shared_ptr<lua_State>& luaState, int index)
     {
         return lua_isnil(luaState.get(), index);
     }
@@ -336,7 +336,7 @@ namespace lua { namespace stack {
     }
 
     template<>
-    inline lua::Null read(const std::shared_ptr<lua_State>& luaState, int index) {
+    inline lua::Nil read(const std::shared_ptr<lua_State>& luaState, int index) {
         return nullptr;
     }
     
@@ -358,12 +358,12 @@ namespace lua { namespace stack {
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     inline void settop(const std::shared_ptr<lua_State>& luaState, int n) {
-        LUASTATE_DEBUG_LOG("  POP  %d\n", top(luaState) - n);
+        LUASTATE_DEBUG_LOG("  POP  %d", top(luaState) - n);
         lua_settop(luaState.get(), n);
     }
     
     inline void pop(const std::shared_ptr<lua_State>& luaState, int n) {
-        LUASTATE_DEBUG_LOG("  POP  %d\n", n);
+        LUASTATE_DEBUG_LOG("  POP  %d", n);
         lua_pop(luaState.get(), n);
     }
     
@@ -384,7 +384,7 @@ namespace lua { namespace stack {
     //////////////////////////////////////////////////////////////////////////////////////////////////
     
     inline void get(const std::shared_ptr<lua_State>& luaState, int index) {
-        LUASTATE_DEBUG_LOG("GET\n");
+        LUASTATE_DEBUG_LOG("GET table %d", index);
         lua_gettable(luaState.get(), index);
     }
     
@@ -393,18 +393,18 @@ namespace lua { namespace stack {
     
     template<>
     inline void get(const std::shared_ptr<lua_State>& luaState, int index, const char* key) {
-        LUASTATE_DEBUG_LOG("GET  %s\n", key);
+        LUASTATE_DEBUG_LOG("GET  %s", key);
         lua_getfield(luaState.get(), index, key);
     }
     
     template<>
     inline void get(const std::shared_ptr<lua_State>& luaState, int index, int key) {
-        LUASTATE_DEBUG_LOG("GET  %d\n", key);
+        LUASTATE_DEBUG_LOG("GET  %d", key);
         lua_rawgeti(luaState.get(), index, key);
     }
     
     inline void get_global(const std::shared_ptr<lua_State>& luaState, const char* name) {
-        LUASTATE_DEBUG_LOG("GET_GLOBAL %s\n", name);
+        LUASTATE_DEBUG_LOG("GET_GLOBAL %s", name);
         lua_getglobal(luaState.get(), name);
     }
     

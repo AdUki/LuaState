@@ -81,8 +81,34 @@ int main(int argc, char** argv)
     state.set("lambda", [&intValue](int a, int b, int c, int d) {
         intValue = a + b + c + d;
     });
-    state.doString("a = lambda(4, 8, 12, 14)");
+    state.doString("lambda(4, 8, 12, 14)");
     assert(intValue == 38);
+    
+    // Test when we provide less arguments than we need
+    state.doString("lambda(1,2)");
+    assert(intValue == 3);
+    
+    // Test when we provide more arguments than we need
+    state.doString("lambda(1,2,3,4,5,6,7,8,9)");
+    assert(intValue == 10);
+    {
+        lua::Value nilValue1 = state["novaluehere"];
+        lua::Value nilValue2 = state["novaluehere"];
+        lua::Value nilValue3 = state["novaluehere"];
+        state.doString("lambda(1,2,3,4,5,6,7,8,9)");
+        assert(intValue == 10);
+    }
+    
+    // Test when we provide less arguments than we need
+    state.doString("lambda(1,2)");
+    assert(intValue == 3);
+    {
+        lua::Value nilValue1 = state["novaluehere"];
+        lua::Value nilValue2 = state["novaluehere"];
+        lua::Value nilValue3 = state["novaluehere"];
+        state.doString("lambda(1,2)");
+        assert(intValue == 3);
+    }
     
     // Test multi return
     state.set("lambda", []() -> std::tuple<lua::Integer, lua::String> {

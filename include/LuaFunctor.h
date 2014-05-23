@@ -15,13 +15,29 @@ namespace lua {
     /// Base functor class with call function. It is used for registering lamdas, or regular functions
     struct BaseFunctor
     {
-        BaseFunctor(const std::shared_ptr<lua_State>& luaState) {
-            LUASTATE_DEBUG_LOG("Functor %p created!\n", this);
-        }
-        virtual ~BaseFunctor() {
-            LUASTATE_DEBUG_LOG("Functor %p destructed!\n", this);
+        BaseFunctor() {
+            LUASTATE_DEBUG_LOG("Functor %p created!", this);
         }
         
+        virtual ~BaseFunctor() {
+            LUASTATE_DEBUG_LOG("Functor %p destructed!", this);
+        }
+        
+        /// In Lua numbers of argumens can be different so here we will handle these situations.
+        ///
+        /// @param luaState     Shared pointer of Lua state
+        inline void prepareFunctionCall(const std::shared_ptr<lua_State>& luaState, int requiredValues) {
+            
+            // First item is our pushed userdata
+            if (stack::top(luaState) > requiredValues + 1) {
+                stack::settop(luaState, requiredValues + 1);
+            }
+        }
+        
+        /// Virtual function that will make Lua call to our functor.
+        ///
+        /// @param luaState     Shared pointer of Lua state
+        /// @param deallocQueue Queue for deletion values initialized from given luaState
         virtual int call(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) = 0;
     };
     
@@ -31,13 +47,15 @@ namespace lua {
     struct Functor : public BaseFunctor {
         std::function<Ret(Args...)> function;
         
-        Functor(const std::shared_ptr<lua_State>& luaState, std::function<Ret(Args...)> function)
-        : BaseFunctor(luaState)
-        , function(function){
-        }
+        /// Constructor creates functor to be pushed to Lua interpret
+        Functor(std::function<Ret(Args...)> function) : BaseFunctor(), function(function) {}
         
+        /// We will make Lua call to our functor.
+        ///
+        /// @param luaState     Shared pointer of Lua state
+        /// @param deallocQueue Queue for deletion values initialized from given luaState
         int call(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) {
-            Ret value = traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue, stack::top(luaState) - sizeof...(Args) + 1));
+            Ret value = traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue, 2));
             return stack::push(luaState, value);
         }
     };
@@ -48,12 +66,15 @@ namespace lua {
     struct Functor<void, Args...> : public BaseFunctor {
         std::function<void(Args...)> function;
         
-        Functor(const std::shared_ptr<lua_State>& luaState, std::function<void(Args...)> function)
-        : BaseFunctor(luaState)
-        , function(function) {}
+        /// Constructor creates functor to be pushed to Lua interpret
+        Functor(std::function<void(Args...)> function) : BaseFunctor(), function(function) {}
         
+        /// We will make Lua call to our functor.
+        ///
+        /// @param luaState     Shared pointer of Lua state
+        /// @param deallocQueue Queue for deletion values initialized from given luaState
         int call(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) {
-            traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue, stack::top(luaState) - sizeof...(Args) + 1));
+            traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue, 2));
             return 0;
         }
     };
@@ -63,7 +84,7 @@ namespace lua {
         template <typename Ret, typename ... Args>
         inline int push(const std::shared_ptr<lua_State>& luaState, Ret(*function)(Args...)) {
             BaseFunctor** udata = (BaseFunctor **)lua_newuserdata(luaState.get(), sizeof(BaseFunctor *));
-            *udata = new Functor<Ret, Args...>(luaState, function);
+            *udata = new Functor<Ret, Args...>(function);
             
             luaL_getmetatable(luaState.get(), "luaL_Functor");
             lua_setmetatable(luaState.get(), -2);
@@ -73,7 +94,7 @@ namespace lua {
         template <typename Ret, typename ... Args>
         inline int push(const std::shared_ptr<lua_State>& luaState, std::function<Ret(Args...)> function) {
             BaseFunctor** udata = (BaseFunctor **)lua_newuserdata(luaState.get(), sizeof(BaseFunctor *));
-            *udata = new Functor<Ret, Args...>(luaState, function);
+            *udata = new Functor<Ret, Args...>(function);
             
             luaL_getmetatable(luaState.get(), "luaL_Functor");
             lua_setmetatable(luaState.get(), -2);

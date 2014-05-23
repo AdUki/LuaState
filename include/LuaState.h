@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  LuaState.h
 //  LuaState
@@ -21,7 +21,7 @@
 #include <lua.hpp>
 
 #ifdef LUASTATE_DEBUG_MODE
-#   define LUASTATE_DEBUG_LOG(format, ...) printf(format, ## __VA_ARGS__)
+#   define LUASTATE_DEBUG_LOG(format, ...) printf(format "\n", ## __VA_ARGS__)
 #else
 #   define LUASTATE_DEBUG_LOG(format, ...)
 #endif
@@ -49,6 +49,8 @@ namespace lua {
         detail::DeallocQueue* _deallocQueue;
         
         /// Function for metatable "__call" field. It calls stored functor pushes return values to stack.
+        ///
+        /// @pre In Lua C API during function calls lua_State moves stack index to place, where first element is our userdata, and next elements are returned values
         static int metatableCallFunction(lua_State* luaState) {
             std::weak_ptr<lua_State> weakPtr = *(std::weak_ptr<lua_State> *)lua_topointer(luaState, lua_upvalueindex(1));
             
@@ -176,11 +178,15 @@ namespace lua {
         /// Flush all elements from stack and check ref counting
         void checkMemLeaks() {
             
-            LUASTATE_DEBUG_LOG("Reference counter is %d\n", REF_COUNTER);
+//            LUASTATE_DEBUG_LOG("Reference counter is %d", REF_COUNTER);
             
             int count = stack::top(_luaState);
-            LUASTATE_DEBUG_LOG("Flushed %d elements from stack\n", count);
+            LUASTATE_DEBUG_LOG("Flushed %d elements from stack:", count);
+            stack::dump(_luaState.get());
             lua_settop(_luaState.get(), 0);
+
+            LUASTATE_DEBUG_LOG("Deallocation queue has %lu elements", _deallocQueue->size());
+            assert(_deallocQueue->empty());
             
             // Check for memory leaks during ref counting, should be zero
             assert(REF_COUNTER == 0);
