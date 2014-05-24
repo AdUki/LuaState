@@ -23,18 +23,18 @@ namespace lua {
             /// Function get single value from lua stack
             template<typename T>
             static inline T readValue(const std::shared_ptr<lua_State>& luaState,
-                               detail::DeallocQueue* deallocQueue,
-                               int index)
+                                      detail::DeallocQueue* deallocQueue,
+                                      int stackTop)
             {
-                return std::move(lua::Value(luaState, nullptr, index));
+                return std::move(lua::Value(luaState, deallocQueue, stackTop - 1));
             }
             
             /// Function creates indexes for mutli values and get them from stack
             template<std::size_t... Is>
             static std::tuple<Ts...> unpackMultiValues(const std::shared_ptr<lua_State>& luaState,
-                                            detail::DeallocQueue* deallocQueue,
-                                            int stackTop,
-                                            traits::indexes<Is...>)
+                                                       detail::DeallocQueue* deallocQueue,
+                                                       int stackTop,
+                                                       traits::indexes<Is...>)
             {
                 return std::make_tuple(readValue<Ts>(luaState, deallocQueue, Is + stackTop)...);
             }
@@ -43,19 +43,20 @@ namespace lua {
 
             /// Function get multiple return values from lua stack
             static std::tuple<Ts...> getMultiValues(const std::shared_ptr<lua_State>& luaState,
-                                              detail::DeallocQueue* deallocQueue,
-                                              int offset)
+                                                    detail::DeallocQueue* deallocQueue,
+                                                    int stackTop)
             {
-                return unpackMultiValues(luaState, deallocQueue, offset, typename traits::indexes_builder<I>::index());
+                return unpackMultiValues(luaState, deallocQueue, stackTop, typename traits::indexes_builder<I>::index());
             }
         };
         
         /// Function expects that number of elements in tuple and number of pushed values in stack are same. Applications takes care of this requirement by popping overlapping values before calling this function
         template<typename ... Ts>
-        inline std::tuple<Ts...> get_and_pop(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int stackTop) {
-            constexpr size_t num = sizeof...(Ts);
-            auto value = Pop<num, Ts...>::getMultiValues(luaState, deallocQueue, stackTop);
-            return value;
+        inline std::tuple<Ts...> get_and_pop(const std::shared_ptr<lua_State>& luaState,
+                                             detail::DeallocQueue* deallocQueue,
+                                             int stackTop)
+        {
+            return Pop<sizeof...(Ts), Ts...>::getMultiValues(luaState, deallocQueue, stackTop);
         }
         
         
@@ -97,8 +98,7 @@ namespace lua {
             }
             
             // We will take pushed values and distribute them to returned lua::Values
-            if (value._deallocQueue != nullptr)
-                value._pushedValues = 0;
+            value._pushedValues = 0;
             
             _tuple = stack::get_and_pop<typename std::remove_reference<Ts>::type...>(value._luaState, value._deallocQueue, value._stackTop + 1);
 	    }

@@ -56,9 +56,8 @@ namespace lua {
             
             std::shared_ptr<lua_State> instance = weakPtr.lock();
             if (instance != nullptr) {
-                detail::DeallocQueue* deallocQueue = (detail::DeallocQueue *)lua_topointer(luaState, lua_upvalueindex(2));
                 BaseFunctor* functor = *(BaseFunctor **)luaL_checkudata(luaState, 1, "luaL_Functor");;
-                return functor->call(instance, deallocQueue);
+                return functor->call(instance);
             }
             return 0;
         }
@@ -100,8 +99,7 @@ namespace lua {
             
             // Set up metatable call operator for functors
             lua_pushlightuserdata(luaState, *weakPtr);
-            lua_pushlightuserdata(luaState, _deallocQueue);
-            lua_pushcclosure(luaState, &State::metatableCallFunction, 2);
+            lua_pushcclosure(luaState, &State::metatableCallFunction, 1);
             lua_setfield(luaState, -2, "__call");
             
             // Set up metatable garbage collection for functors
@@ -178,7 +176,7 @@ namespace lua {
         /// Flush all elements from stack and check ref counting
         void checkMemLeaks() {
             
-//            LUASTATE_DEBUG_LOG("Reference counter is %d", REF_COUNTER);
+            LUASTATE_DEBUG_LOG("Reference counter is %d", REF_COUNTER);
             
             int count = stack::top(_luaState);
             LUASTATE_DEBUG_LOG("Flushed %d elements from stack:", count);
@@ -193,6 +191,10 @@ namespace lua {
             
             // Check if there are any values from stack, should be zero
             assert(count == 0);
+        }
+        
+        void stackDump() {
+            lua::stack::dump(_luaState.get());
         }
 #endif
         

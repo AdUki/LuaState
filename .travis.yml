@@ -33,6 +33,11 @@ before_script:
 
 script: 
   - make
+  - ./state_test
+  - ./types_test
+  - ./get_test
+  - ./set_test
+  - ./values_test
+  - ./ref_test
+  - ./lambda_test
 
-  # Find all executable files and run them
-  - find . -maxdepth 2 -type f -perm +111 -exec {} \;

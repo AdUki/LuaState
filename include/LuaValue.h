@@ -58,7 +58,7 @@ namespace lua {
         Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue)
         : _luaState(luaState)
         , _deallocQueue(deallocQueue)
-        , _stackTop(stack::top(_luaState))
+        , _stackTop(stack::top(luaState))
         , _pushedValues(0)
         , _groupedValues(0)
         , _refCounter(new int(0))
@@ -130,16 +130,22 @@ namespace lua {
         /// @param deallocQueue Queue for deletion values initialized from given luaState
         /// @param index        Index of value which is already in stack
         Value(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue, int index)
-        : Value(luaState, deallocQueue)
+        : _luaState(luaState)
+        , _deallocQueue(deallocQueue)
+        , _stackTop(index)
+        , _pushedValues(1)
+        , _groupedValues(0)
+        , _refCounter(nullptr)
         {
-            _stackTop = index - 1;
-            _pushedValues = 1;
-            *_refCounter = 1;
+            if (_deallocQueue != nullptr) {
+                LUASTATE_ADD_REF_COUNT();
+                _refCounter = new int(1);
+            }
         }
         
         /// Upon deletion we will restore stack to original value
         ~Value() {
-            // Check if there was value assigned
+            // Check if there was value assigned (_luaState == nullptr) and check if stack is managed automaticaly (_deallocQueue == nullptr), which is when we call C functions from Lua
             if (_luaState == nullptr || _deallocQueue == nullptr)
                 return;
 
@@ -171,12 +177,7 @@ namespace lua {
             // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
             // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
             else {
-                
-//                if(!_deallocQueue->empty())
-//                    assert(_stackTop + _pushedValues == _deallocQueue->top().stackCap);
-                
-                if (_deallocQueue->empty() || _stackTop + _pushedValues != _deallocQueue->top().stackCap)
-                    _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
+                _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
             }
         }
         

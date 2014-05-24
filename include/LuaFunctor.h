@@ -38,7 +38,7 @@ namespace lua {
         ///
         /// @param luaState     Shared pointer of Lua state
         /// @param deallocQueue Queue for deletion values initialized from given luaState
-        virtual int call(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) = 0;
+        virtual int call(const std::shared_ptr<lua_State>& luaState) = 0;
     };
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,10 +52,12 @@ namespace lua {
         
         /// We will make Lua call to our functor.
         ///
+        /// @note When we call function from Lua to C, they have their own stack, where in the first position is our binded userdata and next position are pushed arguments
+        ///
         /// @param luaState     Shared pointer of Lua state
         /// @param deallocQueue Queue for deletion values initialized from given luaState
-        int call(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) {
-            Ret value = traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue, 2));
+        int call(const std::shared_ptr<lua_State>& luaState) {
+            Ret value = traits::apply(function, stack::get_and_pop<Args...>(luaState, nullptr, 2));
             return stack::push(luaState, value);
         }
     };
@@ -71,10 +73,12 @@ namespace lua {
         
         /// We will make Lua call to our functor.
         ///
+        /// @note When we call function from Lua to C, they have their own stack, where in the first position is our binded userdata and next position are pushed arguments
+        ///
         /// @param luaState     Shared pointer of Lua state
         /// @param deallocQueue Queue for deletion values initialized from given luaState
-        int call(const std::shared_ptr<lua_State>& luaState, detail::DeallocQueue* deallocQueue) {
-            traits::apply(function, stack::get_and_pop<Args...>(luaState, deallocQueue, 2));
+        int call(const std::shared_ptr<lua_State>& luaState) {
+            traits::apply(function, stack::get_and_pop<Args...>(luaState, nullptr, 2));
             return 0;
         }
     };
