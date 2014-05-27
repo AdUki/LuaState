@@ -99,8 +99,22 @@ namespace lua {
 
         template<typename ... Ts>
         Value&& executeFunction(bool protectedCall, Ts... args) {
-            _groupedValues = callFunction(protectedCall, args...);
-            _pushedValues += _groupedValues;
+            
+            // we check if there are not pushed values before function
+            if (_stackTop + _pushedValues != stack::top(_luaState)) {
+                
+                lua_pushvalue(_luaState.get(), _stackTop + 1);
+                
+                lua::Value value(_luaState, _deallocQueue, stack::top(_luaState) - 1);
+                value._groupedValues = value.callFunction(protectedCall, args...);
+                value._pushedValues += value._groupedValues;
+                
+                std::swap(*this, value);
+            }
+            else {
+                _groupedValues = callFunction(protectedCall, args...);
+                _pushedValues += _groupedValues;
+            }
             return std::move(*this);
         }
         
@@ -145,6 +159,7 @@ namespace lua {
         
         /// Upon deletion we will restore stack to original value
         ~Value() {
+            
             // Check if there was value assigned (_luaState == nullptr) and check if stack is managed automaticaly (_deallocQueue == nullptr), which is when we call C functions from Lua
             if (_luaState == nullptr || _deallocQueue == nullptr)
                 return;
@@ -320,6 +335,12 @@ namespace lua {
         T* getPtr() const {
             return static_cast<T*>(Pointer(*this));
         }
+            
+        /// @returns Value position on stack
+        int getStackIndex() const {
+            assert(_pushedValues > 0);
+            return _stackTop + 1;
+        }
     };
     
     // compare operators
@@ -377,6 +398,17 @@ namespace lua {
     template <typename T>
     inline bool operator>=(const T& value, const Value &stateValue) {
         return T(stateValue) >= value;
+    }
+            
+    namespace stack {
+        
+        /// Values direct forwarding
+        template<>
+        inline int push(const std::shared_ptr<lua_State>& luaState, lua::Value value) {
+            lua_pushvalue(luaState.get(), value.getStackIndex());
+            return 1;
+        }
+        
     }
 }
 

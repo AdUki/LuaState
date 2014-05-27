@@ -29,6 +29,4 @@ namespace lua { namespace detail {
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
     typedef std::priority_queue<DeallocStackItem, std::vector<DeallocStackItem>, DeallocStackComparison> DeallocQueue;
-   
-    static DeallocQueue* DEALLOC_QUEUE;
 } }

@@ -165,6 +165,17 @@ int main(int argc, char** argv)
         moveValueFnc(state["table"]["three"]);
     }
     
+    // Test geting value from Lua and sending value back to Lua
+    state.doString("function moveValues(tab)  assert(tab.a == 'a')  assert(tab.b == 'b')  assert(tab.c == 'c')  assert(tab.one == 1)  assert(tab.two == 2)  assert(tab.three == 3) end");
+    
+    state.doString("moveValues(table)");
+    
+    state["moveValues"](state["table"]);
+    
+    v1 = new lua::Value(state["table"]);
+    state["moveValues"](*v1);
+    delete v1;
+    
     state.checkMemLeaks();
     return 0;
 }

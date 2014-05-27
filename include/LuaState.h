@@ -77,7 +77,6 @@ namespace lua {
         State(bool loadLibs) {
             
             _deallocQueue = new detail::DeallocQueue();
-            detail::DEALLOC_QUEUE = _deallocQueue;
             lua_State* luaState = luaL_newstate();
             assert(luaState != NULL);
             

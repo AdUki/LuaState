@@ -76,7 +76,22 @@ int main(int argc, char** argv)
     });
     state.doString("a = lambda(4, 8, 12, 14)");
     assert(state["a"] == 38);
-    assert(state["lambda"](2, 7) == 9);
+    
+    // Test direct passing to functions
+    {
+        lua::Value value = state["lambda"];
+        assert(value(int(state["a"]), 1, 0, 1) == 40);
+        assert(value(1, int(state["a"]), 0, 1) == 40);
+        assert(value(1, 0, int(state["a"]), 1) == 40);
+        assert(value(1, 0, 1, int(state["a"])) == 40);
+        assert(value(int(state["a"]), int(state["a"]), int(state["a"]), int(state["a"])) == 152);
+    }
+    
+    assert(state["lambda"](int(state["a"]), 1, 0, 1) == 40);
+    assert(state["lambda"](1, int(state["a"]), 0, 1) == 40);
+    assert(state["lambda"](1, 0, int(state["a"]), 1) == 40);
+    assert(state["lambda"](1, 0, 1, int(state["a"])) == 40);
+    assert(state["lambda"](int(state["a"]), int(state["a"]), int(state["a"]), int(state["a"])) == 152);
     
     state.set("lambda", [&intValue](int a, int b, int c, int d) {
         intValue = a + b + c + d;
