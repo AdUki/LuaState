@@ -36,7 +36,7 @@ namespace lua {
                                                               int stackTop,
                                                               traits::indexes<Is...>)
             {
-                return std::make_tuple(readValue<Ts>(luaState, deallocQueue, Is + stackTop)...);
+                return std::tuple<Ts...>(readValue<Ts>(luaState, deallocQueue, Is + stackTop)...);
             }
             
         public:

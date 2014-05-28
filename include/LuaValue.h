@@ -130,7 +130,7 @@ namespace lua {
             value._groupedValues = returnedValues <= 0 ? 0 : returnedValues - 1;
             value._pushedValues += returnedValues;
             
-            return std::move(value);
+            return value;
         }
         
     public:
@@ -236,7 +236,7 @@ namespace lua {
             stack::get(_luaState, _stackTop + _pushedValues - _groupedValues, key);
             value._pushedValues = 1;
             
-            return std::move(value);
+            return value;
         }
         
         /// While chaining [] operators we will call this function multiple times and can query nested tables.
@@ -257,7 +257,7 @@ namespace lua {
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
         Value operator()(Ts... args) const & {
-            return std::move(executeFunction(false, args...));
+            return executeFunction(false, args...);
         }
         
         /// Call given value.
