@@ -29,6 +29,38 @@ int main(int argc, char** argv)
         assert(value == 2.5);
         assert(function() == 10);
         assert(value == 2.5);
+        
+        value = state["number"];
+        value = state["number"];
+        value = state["number"];
+        assert(function() == 10);
+        assert(value == 2.5);
+        assert(function() == 10);
+        assert(value == 2.5);
+        assert(function() == 10);
+        assert(value == 2.5);
+        
+        value = state["getInteger"];
+        function = state["number"];
+        function = state["getInteger"];
+        value = state["number"];
+        assert(function() == 10);
+        assert(value == 2.5);
+        assert(function() == 10);
+        assert(value == 2.5);
+        assert(function() == 10);
+        assert(value == 2.5);
+        
+        value = function;
+        value = function;
+        value = function;
+        function = state["number"];
+        assert(function == 2.5);
+        assert(value() == 10);
+        assert(function == 2.5);
+        assert(value() == 10);
+        assert(function == 2.5);
+        assert(value() == 10);
     }
     
     // Test deletion in FILO order

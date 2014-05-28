@@ -103,18 +103,17 @@ namespace lua {
             // we check if there are not pushed values before function
             if (_stackTop + _pushedValues != stack::top(_luaState)) {
                 
+                _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
+
                 lua_pushvalue(_luaState.get(), _stackTop + 1);
                 
-                lua::Value value(_luaState, _deallocQueue, stack::top(_luaState) - 1);
-                value._groupedValues = value.callFunction(protectedCall, args...);
-                value._pushedValues += value._groupedValues;
-                
-                std::swap(*this, value);
+                _stackTop = stack::top(_luaState) - 1;
+                _pushedValues = 1;
+                _groupedValues = 0;
             }
-            else {
-                _groupedValues = callFunction(protectedCall, args...);
-                _pushedValues += _groupedValues;
-            }
+
+            _groupedValues = callFunction(protectedCall, args...);
+            _pushedValues += _groupedValues;
             return std::move(*this);
         }
         
@@ -131,6 +130,15 @@ namespace lua {
             value._pushedValues += returnedValues;
             
             return value;
+        }
+            
+        inline void copyFrom(const Value& value) {
+            _luaState = value._luaState;
+            _pushedValues = value._pushedValues;
+            _stackTop = value._stackTop;
+            _deallocQueue = value._deallocQueue;
+            _groupedValues = value._groupedValues;
+            _refCounter = value._refCounter;
         }
         
     public:
@@ -198,19 +206,35 @@ namespace lua {
         
         // Default move constructor and assigment
         Value(Value&&) = default;
-        Value& operator= (Value && value) = default;
+        Value& operator= (Value && value) && = default;
 
         /// Deleted copy assignment
-        Value& operator= (const Value& value) = delete;
+        Value& operator= (const Value& value) {
+            
+            if (_deallocQueue != nullptr) {
+                
+                // Check reference counter
+                if (*_refCounter > 1) {
+                    *_refCounter = *_refCounter - 1;
+                }
+                else {
+                    LUASTATE_REM_REF_COUNT();
+                    delete _refCounter;
+                    _deallocQueue->push(detail::DeallocStackItem(_stackTop, _pushedValues));
+                }
+            }
+            
+            copyFrom(value);
+            
+            // We will increment reference count
+            *_refCounter = *_refCounter + 1;
+            
+            return *this;
+        }
 
         /// Some compilers use copy constructor with std::make_tuple. We will use reference counter to correctly deallocate values from stack
         Value(const Value& value) {
-            _luaState = value._luaState;
-            _pushedValues = value._pushedValues;
-            _stackTop = value._stackTop;
-            _deallocQueue = value._deallocQueue;
-            _groupedValues = value._groupedValues;
-            _refCounter = value._refCounter;
+            copyFrom(value);
             
             // We will increment reference count
             *_refCounter = *_refCounter + 1;
