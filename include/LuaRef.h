@@ -76,7 +76,7 @@ namespace lua {
             lua_rawgeti(_luaState.get(), LUA_REGISTRYINDEX, *_refKey);
             value._pushedValues = 1;
             
-            return std::move(value);
+            return value;
         }
     };
     

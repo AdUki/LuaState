@@ -26,15 +26,15 @@ namespace lua {
                                       detail::DeallocQueue* deallocQueue,
                                       int stackTop)
             {
-                return std::move(lua::Value(luaState, deallocQueue, stackTop - 1));
+                return lua::Value(luaState, deallocQueue, stackTop - 1);
             }
             
             /// Function creates indexes for mutli values and get them from stack
             template<std::size_t... Is>
-            static std::tuple<Ts...> unpackMultiValues(const std::shared_ptr<lua_State>& luaState,
-                                                       detail::DeallocQueue* deallocQueue,
-                                                       int stackTop,
-                                                       traits::indexes<Is...>)
+            static inline std::tuple<Ts...> unpackMultiValues(const std::shared_ptr<lua_State>& luaState,
+                                                              detail::DeallocQueue* deallocQueue,
+                                                              int stackTop,
+                                                              traits::indexes<Is...>)
             {
                 return std::make_tuple(readValue<Ts>(luaState, deallocQueue, Is + stackTop)...);
             }
@@ -42,9 +42,9 @@ namespace lua {
         public:
 
             /// Function get multiple return values from lua stack
-            static std::tuple<Ts...> getMultiValues(const std::shared_ptr<lua_State>& luaState,
-                                                    detail::DeallocQueue* deallocQueue,
-                                                    int stackTop)
+            static inline std::tuple<Ts...> getMultiValues(const std::shared_ptr<lua_State>& luaState,
+                                                           detail::DeallocQueue* deallocQueue,
+                                                           int stackTop)
             {
                 return unpackMultiValues(luaState, deallocQueue, stackTop, typename traits::indexes_builder<I>::index());
             }
