@@ -196,20 +196,9 @@ namespace lua {
             }
         }
         
-        /// Default move constructor
+        // Default move constructor and assigment
         Value(Value&&) = default;
-        
-        /// In assigment we swap values, so initialized values will be properly released
-        Value& operator= (Value && value) {
-            std::swap(_luaState, value._luaState);
-            std::swap(_pushedValues, value._pushedValues);
-            std::swap(_stackTop, value._stackTop);
-            std::swap(_deallocQueue, value._deallocQueue);
-            std::swap(_groupedValues, value._groupedValues);
-            std::swap(_refCounter, value._refCounter);
-            
-            return *this;
-        }
+        Value& operator= (Value && value) = default;
 
         /// Deleted copy assignment
         Value& operator= (const Value& value) = delete;
