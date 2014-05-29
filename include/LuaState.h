@@ -167,16 +167,26 @@ namespace lua {
         /// Flush all elements from stack and check ref counting
         void checkMemLeaks() {
             
-            int count = stack::top(_luaState);
-            LUASTATE_DEBUG_LOG("Flushed %d elements from stack:", count);
-            stack::dump(_luaState);
-            lua_settop(_luaState, 0);
-
-            LUASTATE_DEBUG_LOG("Deallocation queue has %lu elements", _deallocQueue->size());
-            assert(_deallocQueue->empty());
+            bool noLeaks = true;
             
             // Check if there are any values from stack, should be zero
-            assert(count == 0);
+            int count = stack::top(_luaState);
+            if (count != 0) {
+                LUASTATE_DEBUG_LOG("There are %d elements in stack:", count);
+                stack::dump(_luaState);
+                noLeaks = false;
+            }
+            
+            // Dealloc queue should be empty
+            if (!_deallocQueue->empty()) {
+                LUASTATE_DEBUG_LOG("Deallocation queue has %lu elements:", _deallocQueue->size());
+                while (!_deallocQueue->empty()) {
+                    LUASTATE_DEBUG_LOG("[stackCap = %d, numElements = %d]", _deallocQueue->top().stackCap, _deallocQueue->top().numElements);
+                    _deallocQueue->pop();
+                }
+                noLeaks = false;
+            }
+            assert(noLeaks);
         }
         
         void stackDump() {
