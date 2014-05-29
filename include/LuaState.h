@@ -28,12 +28,12 @@
 #   define LUASTATE_ASSERT(condition)
 #endif
 
-#include "./DeallocStackQueue.h"
 #include "./Traits.h"
 
 #include "./LuaPrimitives.h"
 #include "./LuaStack.h"
 #include "./LuaException.h"
+#include "./LuaStackItem.h"
 #include "./LuaValue.h"
 #include "./LuaReturn.h"
 #include "./LuaFunctor.h"

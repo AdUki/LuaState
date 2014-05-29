@@ -14,8 +14,9 @@ macro(group_folder FOLDER)
 endmacro()
 
 macro(add_test FILE_NAME)
-	add_executable(${FILE_NAME} test/${FILE_NAME}.cpp test/test.h ${INCLUDE_FILES})
+	add_executable(${FILE_NAME} test/${FILE_NAME}.cpp test/test.h)
 	target_link_libraries(${FILE_NAME} ${LUA_LIBRARIES})
+	add_dependencies(ALL_TEST ${FILE_NAME})
 endmacro()
 
 ################################################################################################
@@ -38,6 +39,8 @@ endif(LUA_INCLUDE_DIR)
 
 ################################################################################################
 ################################################################################################
+
+add_executable(ALL_TEST test/main.cpp ${INCLUDE_FILES})
 
 add_test("state_test")
 add_test("types_test")

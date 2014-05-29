@@ -27,71 +27,14 @@ namespace lua {
         friend class Ref;
         template <typename ... Ts> friend class Return;
         
-        struct StackState {
-            
-            lua_State* state;
-            detail::DeallocQueue* deallocQueue = nullptr;
-            
-            /// Indicates number of pushed values to stack on lua::Value when created
-            int top;
-            
-            /// Indicates number pushed values which were pushed by this lua::Value instance
-            mutable int pushed;
-            
-            /// Indicates multi returned values, because the we want first returned value and not the last
-            int grouped;
-            
-            StackState() : state(nullptr), deallocQueue(nullptr)
-            {
-            }
-            
-            StackState(lua_State* luaState, detail::DeallocQueue* deallocQueue, int stackTop, int pushedValues, int groupedValues)
-            : state(luaState)
-            , deallocQueue(deallocQueue)
-            , top(stackTop)
-            , pushed(pushedValues)
-            , grouped(groupedValues)
-            {
-            }
-            
-            ~StackState()
-            {
-                // Check if stack is managed automaticaly (_deallocQueue == nullptr), which is when we call C functions from Lua
-                if (deallocQueue != nullptr) {
-                    
-                    // Check if we dont try to release same values twice
-                    int currentStackTop = stack::top(state);
-                    if (currentStackTop < pushed + top) {
-                        stack::dump(state);
-                        return;
-                    }
-                    
-                    // We will check if we haven't pushed some other new lua::Value to stack
-                    if (top + pushed == currentStackTop) {
-                        
-                        // We will check deallocation priority queue, if there are some lua::Value instances to be deleted
-                        while (!deallocQueue->empty() && deallocQueue->top().stackCap == top) {
-                            top -= deallocQueue->top().numElements;
-                            deallocQueue->pop();
-                        }
-                        stack::settop(state, top);
-                    }
-                    // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
-                    // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
-                    else
-                        deallocQueue->push(detail::DeallocStackItem(top, pushed));
-                }
-            }
-        };
-        
-        std::shared_ptr<StackState> _stack;
+        std::shared_ptr<detail::StackItem> _stack;
         
         /// Constructor for creating lua::Ref instances
         ///
         /// @param luaState     Pointer of Lua state
         /// @param deallocQueue Queue for deletion values initialized from given luaState
         Value(lua_State* luaState, detail::DeallocQueue* deallocQueue)
-        : _stack(std::make_shared<StackState>(luaState, deallocQueue, stack::top(luaState), 0, 0))
+        : _stack(std::make_shared<detail::StackItem>(luaState, deallocQueue, stack::top(luaState), 0, 0))
         {
         }
         
@@ -101,7 +44,7 @@ namespace lua {
         /// @param deallocQueue Queue for deletion values initialized from given luaState
         /// @param name         Key of global value
         Value(lua_State* luaState, detail::DeallocQueue* deallocQueue, const char* name)
-        : _stack(std::make_shared<StackState>(luaState, deallocQueue, stack::top(luaState), 1, 0))
+        : _stack(std::make_shared<detail::StackItem>(luaState, deallocQueue, stack::top(luaState), 1, 0))
         {
             stack::get_global(_stack->state, name);
         }
@@ -187,9 +130,9 @@ namespace lua {
         {
             if (stack::top(luaState) < index)
                 // We request more values, that are returned
-                _stack = std::make_shared<StackState>(luaState, nullptr, 0, 0, 0);
+                _stack = std::make_shared<detail::StackItem>(luaState, nullptr, 0, 0, 0);
             else
-                _stack = std::make_shared<StackState>(luaState, deallocQueue, index, 1, 0);
+                _stack = std::make_shared<detail::StackItem>(luaState, deallocQueue, index, 1, 0);
         }
         
         ~Value() {}
