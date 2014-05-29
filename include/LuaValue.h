@@ -8,15 +8,6 @@
 
 #pragma once
 
-#ifdef LUASTATE_DEBUG_MODE
-static int REF_COUNTER = 0;
-#   define LUASTATE_ADD_REF_COUNT() REF_COUNTER++
-#   define LUASTATE_REM_REF_COUNT() REF_COUNTER--
-#else
-#   define LUASTATE_ADD_REF_COUNT()
-#   define LUASTATE_REM_REF_COUNT()
-#endif
-
 namespace lua {
     
     class Value;
@@ -50,39 +41,57 @@ namespace lua {
             /// Indicates multi returned values, because the we want first returned value and not the last
             int grouped;
             
-            /// Reference counting
-            int refCounter;
-            
             StackState() : state(nullptr), deallocQueue(nullptr)
             {
-                LUASTATE_ADD_REF_COUNT();
             }
             
-            StackState(lua_State* luaState, detail::DeallocQueue* deallocQueue, int stackTop, int pushedValues, int groupedValues, int refCounter)
+            StackState(lua_State* luaState, detail::DeallocQueue* deallocQueue, int stackTop, int pushedValues, int groupedValues)
             : state(luaState)
             , deallocQueue(deallocQueue)
             , top(stackTop)
             , pushed(pushedValues)
             , grouped(groupedValues)
-            , refCounter(refCounter)
             {
-                LUASTATE_ADD_REF_COUNT();
             }
             
             ~StackState()
             {
-                LUASTATE_REM_REF_COUNT();
+                // Check if stack is managed automaticaly (_deallocQueue == nullptr), which is when we call C functions from Lua
+                if (deallocQueue != nullptr) {
+                    
+                    // Check if we dont try to release same values twice
+                    int currentStackTop = stack::top(state);
+                    if (currentStackTop < pushed + top) {
+                        stack::dump(state);
+                        return;
+                    }
+                    
+                    // We will check if we haven't pushed some other new lua::Value to stack
+                    if (top + pushed == currentStackTop) {
+                        
+                        // We will check deallocation priority queue, if there are some lua::Value instances to be deleted
+                        while (!deallocQueue->empty() && deallocQueue->top().stackCap == top) {
+                            top -= deallocQueue->top().numElements;
+                            deallocQueue->pop();
+                        }
+                        stack::settop(state, top);
+                    }
+                    // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
+                    // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
+                    else
+                        deallocQueue->push(detail::DeallocStackItem(top, pushed));
+                }
             }
         };
         
-        StackState* _stack;
+        std::shared_ptr<StackState> _stack;
         
         /// Constructor for creating lua::Ref instances
         ///
         /// @param luaState     Pointer of Lua state
         /// @param deallocQueue Queue for deletion values initialized from given luaState
         Value(lua_State* luaState, detail::DeallocQueue* deallocQueue)
-        : _stack(new StackState(luaState, deallocQueue, stack::top(luaState), 0, 0, 0))
+        : _stack(std::make_shared<StackState>(luaState, deallocQueue, stack::top(luaState), 0, 0))
         {
         }
         
@@ -92,7 +101,7 @@ namespace lua {
         /// @param deallocQueue Queue for deletion values initialized from given luaState
         /// @param name         Key of global value
         Value(lua_State* luaState, detail::DeallocQueue* deallocQueue, const char* name)
-        : _stack(new StackState(luaState, deallocQueue, stack::top(luaState), 1, 0, 1))
+        : _stack(std::make_shared<StackState>(luaState, deallocQueue, stack::top(luaState), 1, 0))
         {
             stack::get_global(_stack->state, name);
         }
@@ -161,43 +170,6 @@ namespace lua {
         
         /// We will check reference count and upon deletion we will restore stack to original value or push values to priority queue
         inline void deleteValue() {
-            
-            // Check if there is value assigned
-            if (_stack == nullptr)
-                return;
-            
-            // Check reference counter
-            _stack->refCounter = _stack->refCounter - 1;
-            if (_stack->refCounter > 0)
-                return;
-            else
-                delete _stack;
-            
-            // Check if stack is managed automaticaly (_deallocQueue == nullptr), which is when we call C functions from Lua
-            if (_stack->deallocQueue != nullptr) {
-            
-                // Check if we dont try to release same values twice
-                int currentStackTop = stack::top(_stack->state);
-                if (currentStackTop < _stack->pushed + _stack->top) {
-                    stack::dump(_stack->state);
-                    return;
-                }
-                
-                // We will check if we haven't pushed some other new lua::Value to stack
-                if (_stack->top + _stack->pushed == currentStackTop) {
-                    
-                    // We will check deallocation priority queue, if there are some lua::Value instances to be deleted
-                    while (!_stack->deallocQueue->empty() && _stack->deallocQueue->top().stackCap == _stack->top) {
-                        _stack->top -= _stack->deallocQueue->top().numElements;
-                        _stack->deallocQueue->pop();
-                    }
-                    stack::settop(_stack->state, _stack->top);
-                }
-                // If yes we can't pop values, we must pop it after deletion of newly created lua::Value
-                // We will put this deallocation to our priority queue, so it will be deleted as soon as possible
-                else
-                    _stack->deallocQueue->push(detail::DeallocStackItem(_stack->top, _stack->pushed));
-            }
         }
         
     public:
@@ -215,52 +187,18 @@ namespace lua {
         {
             if (stack::top(luaState) < index)
                 // We request more values, that are returned
-                _stack = new StackState(luaState, nullptr, 0, 0, 0, 1);
+                _stack = std::make_shared<StackState>(luaState, nullptr, 0, 0, 0);
             else
-                _stack = new StackState(luaState, deallocQueue, index, 1, 0, 1);
+                _stack = std::make_shared<StackState>(luaState, deallocQueue, index, 1, 0);
         }
         
-        ~Value() {
-            deleteValue();
-        }
+        ~Value() {}
+
+        Value(Value&& value) = default;
+        Value(const Value& value) = default;
         
-        /// Move constructor
-        Value(Value&& value) {
-            _stack = value._stack;
-            value._stack = nullptr;
-        }
-
-        /// Move assingment
-        Value& operator= (Value && value) && {
-            _stack = value._stack;
-            value._stack = nullptr;
-            return *this;
-        }
-
-        /// Copy assignment
-        Value& operator= (const Value& value) {
-            
-            if (value._stack == nullptr)
-                _stack = nullptr;
-            
-            else if (_stack == nullptr || _stack->top != value._stack->top) {
-                
-                deleteValue();
-                
-                _stack = value._stack;
-                _stack->refCounter = _stack->refCounter + 1;
-            }
-            
-            return *this;
-        }
-
-        /// Some compilers use copy constructor with std::make_tuple. We will use reference counter to correctly deallocate values from stack
-        Value(const Value& value) {
-            _stack = value._stack;
-            
-            if (_stack != nullptr)
-                _stack->refCounter = _stack->refCounter + 1;
-        }
+        Value& operator= (Value && value) && = default;
+        Value& operator= (const Value& value) = default;
 
         /// With this function we will create lua::Ref instance
         ///

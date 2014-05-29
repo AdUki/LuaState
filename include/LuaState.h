@@ -167,8 +167,6 @@ namespace lua {
         /// Flush all elements from stack and check ref counting
         void checkMemLeaks() {
             
-            LUASTATE_DEBUG_LOG("Reference counter is %d", REF_COUNTER);
-            
             int count = stack::top(_luaState);
             LUASTATE_DEBUG_LOG("Flushed %d elements from stack:", count);
             stack::dump(_luaState);
@@ -176,9 +174,6 @@ namespace lua {
 
             LUASTATE_DEBUG_LOG("Deallocation queue has %lu elements", _deallocQueue->size());
             assert(_deallocQueue->empty());
-            
-            // Check for memory leaks during ref counting, should be zero
-            assert(REF_COUNTER == 0);
             
             // Check if there are any values from stack, should be zero
             assert(count == 0);
