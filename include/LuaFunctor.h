@@ -25,8 +25,8 @@ namespace lua {
         
         /// In Lua numbers of argumens can be different so here we will handle these situations.
         ///
-        /// @param luaState     Shared pointer of Lua state
-        inline void prepareFunctionCall(const std::shared_ptr<lua_State>& luaState, int requiredValues) {
+        /// @param luaState     Pointer of Lua state
+        inline void prepareFunctionCall(lua_State* luaState, int requiredValues) {
             
             // First item is our pushed userdata
             if (stack::top(luaState) > requiredValues + 1) {
@@ -36,9 +36,8 @@ namespace lua {
         
         /// Virtual function that will make Lua call to our functor.
         ///
-        /// @param luaState     Shared pointer of Lua state
-        /// @param deallocQueue Queue for deletion values initialized from given luaState
-        virtual int call(const std::shared_ptr<lua_State>& luaState) = 0;
+        /// @param luaState     Pointer of Lua state
+        virtual int call(lua_State* luaState) = 0;
     };
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,9 +53,8 @@ namespace lua {
         ///
         /// @note When we call function from Lua to C, they have their own stack, where in the first position is our binded userdata and next position are pushed arguments
         ///
-        /// @param luaState     Shared pointer of Lua state
-        /// @param deallocQueue Queue for deletion values initialized from given luaState
-        int call(const std::shared_ptr<lua_State>& luaState) {
+        /// @param luaState     Pointer of Lua state
+        int call(lua_State* luaState) {
             Ret value = traits::apply(function, stack::get_and_pop<Args...>(luaState, nullptr, 2));
             return stack::push(luaState, value);
         }
@@ -75,9 +73,8 @@ namespace lua {
         ///
         /// @note When we call function from Lua to C, they have their own stack, where in the first position is our binded userdata and next position are pushed arguments
         ///
-        /// @param luaState     Shared pointer of Lua state
-        /// @param deallocQueue Queue for deletion values initialized from given luaState
-        int call(const std::shared_ptr<lua_State>& luaState) {
+        /// @param luaState     Pointer of Lua state
+        int call(lua_State* luaState) {
             traits::apply(function, stack::get_and_pop<Args...>(luaState, nullptr, 2));
             return 0;
         }
@@ -86,27 +83,27 @@ namespace lua {
     namespace stack {
         
         template <typename Ret, typename ... Args>
-        inline int push(const std::shared_ptr<lua_State>& luaState, Ret(*function)(Args...)) {
-            BaseFunctor** udata = (BaseFunctor **)lua_newuserdata(luaState.get(), sizeof(BaseFunctor *));
+        inline int push(lua_State* luaState, Ret(*function)(Args...)) {
+            BaseFunctor** udata = (BaseFunctor **)lua_newuserdata(luaState, sizeof(BaseFunctor *));
             *udata = new Functor<Ret, Args...>(function);
             
-            luaL_getmetatable(luaState.get(), "luaL_Functor");
-            lua_setmetatable(luaState.get(), -2);
+            luaL_getmetatable(luaState, "luaL_Functor");
+            lua_setmetatable(luaState, -2);
             return 1;
         }
         
         template <typename Ret, typename ... Args>
-        inline int push(const std::shared_ptr<lua_State>& luaState, std::function<Ret(Args...)> function) {
-            BaseFunctor** udata = (BaseFunctor **)lua_newuserdata(luaState.get(), sizeof(BaseFunctor *));
+        inline int push(lua_State* luaState, std::function<Ret(Args...)> function) {
+            BaseFunctor** udata = (BaseFunctor **)lua_newuserdata(luaState, sizeof(BaseFunctor *));
             *udata = new Functor<Ret, Args...>(function);
             
-            luaL_getmetatable(luaState.get(), "luaL_Functor");
-            lua_setmetatable(luaState.get(), -2);
+            luaL_getmetatable(luaState, "luaL_Functor");
+            lua_setmetatable(luaState, -2);
             return 1;
         }
         
         template<typename T>
-        inline int push(const std::shared_ptr<lua_State>& luaState, T function)
+        inline int push(lua_State* luaState, T function)
         {
             push(luaState, (typename traits::function_traits<T>::Function)(function));
             return 1;

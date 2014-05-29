@@ -203,8 +203,10 @@ int main(int argc, char** argv)
     state.doString("moveValues(table)");
     
     state["moveValues"](state["table"]);
+    state["moveValues"](state["table"], state["table"]);
     
     v1 = new lua::Value(state["table"]);
+    state["moveValues"](*v1);
     state["moveValues"](*v1);
     delete v1;
     

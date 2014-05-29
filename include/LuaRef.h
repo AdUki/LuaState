@@ -13,38 +13,36 @@ namespace lua {
     /// Reference to Lua value. Can be created from any lua::Value
     class Ref
     {
-        /// Shared pointer of Lua state
-        std::shared_ptr<lua_State> _luaState;
+        /// Pointer of Lua state
+        lua_State* _luaState;
         detail::DeallocQueue* _deallocQueue;
         
         /// Key of referenced value in LUA_REGISTRYINDEX
-        std::shared_ptr<int> _refKey;
+        int _refKey;
         
         void createRefKey() {
-            int refKey = luaL_ref(_luaState.get(), LUA_REGISTRYINDEX);
-            
-            // Unregister reference from registry
-            _refKey = std::shared_ptr<int>(new int(refKey), [this](int* ptr){
-                luaL_unref(_luaState.get(), LUA_REGISTRYINDEX, *_refKey);
-                delete ptr;
-            });
+            _refKey = luaL_ref(_luaState, LUA_REGISTRYINDEX);
         }
         
     public:
         
-        Ref() {}
+        Ref() : _luaState(nullptr) {}
         
         // Copy and move constructors just use operator functions
         Ref(const Value& value) { operator=(value); }
         Ref(Value&& value) { operator=(value); }
         
+        ~Ref() {
+            luaL_unref(_luaState, LUA_REGISTRYINDEX, _refKey);
+        }
+        
         /// Copy assignment. Creates lua::Ref from lua::Value.
         void operator= (const Value& value) {
-            _luaState = value._luaState;
-            _deallocQueue = value._deallocQueue;
+            _luaState = value._stack->state;
+            _deallocQueue = value._stack->deallocQueue;
 
             // Duplicate top value
-            lua_pushvalue(_luaState.get(), -1);
+            lua_pushvalue(_luaState, -1);
             
             // Create reference to registry
             createRefKey();
@@ -52,13 +50,13 @@ namespace lua {
 
         /// Move assignment. Creates lua::Ref from lua::Value from top of stack and pops it
         void operator= (Value&& value) {
-            _luaState = value._luaState;
-            _deallocQueue = value._deallocQueue;
+            _luaState = value._stack->state;
+            _deallocQueue = value._stack->deallocQueue;
             
-            if (value._pushedValues > 0)
-                value._pushedValues -= 1;
+            if (value._stack->pushed > 0)
+                value._stack->pushed -= 1;
             else
-                value._stackTop -= 1;
+                value._stack->top -= 1;
             
             // Create reference to registry
             createRefKey();
@@ -69,15 +67,15 @@ namespace lua {
         /// @return lua::Value with referenced value on stack
         Value unref() const {
             
-            assert(_luaState != nullptr);
-            
             Value value(_luaState, _deallocQueue);
             
-            lua_rawgeti(_luaState.get(), LUA_REGISTRYINDEX, *_refKey);
-            value._pushedValues = 1;
+            lua_rawgeti(_luaState, LUA_REGISTRYINDEX, _refKey);
+            value._stack->pushed = 1;
             
             return value;
         }
+        
+        bool isInitialized() const { return _luaState != nullptr; }
     };
     
     
