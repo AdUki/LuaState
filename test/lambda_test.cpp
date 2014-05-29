@@ -94,14 +94,11 @@ int main(int argc, char** argv)
     assert(state["lambda"](int(state["a"]), int(state["a"]), int(state["a"]), int(state["a"])) == 152);
     
     state.set("lambda", [&intValue](int a, int b, int c, int d) {
+        printf("intValue = %d + %d + %d + %d\n", a, b, c, d);
         intValue = a + b + c + d;
     });
     state.doString("lambda(4, 8, 12, 14)");
     assert(intValue == 38);
-    
-    // Test when we provide less arguments than we need
-    state.doString("lambda(1,2)");
-    assert(intValue == 3);
     
     // Test when we provide more arguments than we need
     state.doString("lambda(1,2,3,4,5,6,7,8,9)");
