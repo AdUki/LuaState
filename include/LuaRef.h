@@ -66,13 +66,8 @@ namespace lua {
         ///
         /// @return lua::Value with referenced value on stack
         Value unref() const {
-            
-            Value value(_luaState, _deallocQueue);
-            
             lua_rawgeti(_luaState, LUA_REGISTRYINDEX, _refKey);
-            value._stack->pushed = 1;
-            
-            return value;
+            return Value(std::make_shared<detail::StackItem>(_luaState, _deallocQueue, stack::top(_luaState) - 1, 1, 0));
         }
         
         bool isInitialized() const { return _luaState != nullptr; }

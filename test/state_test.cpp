@@ -56,6 +56,29 @@ int main(int argc, char** argv)
         printf("%s\n", ex.what());
     }
     
+    // Check returning values from doString
+    int a1, a2, a3;
+    a1 = state.doString("return 10");
+    assert(a1 == 10);
+    lua::tie(a1) = state.doString("return 100");
+    assert(a1 == 100);
+    lua::tie(a1, a2, a3) = state.doString("return 11, 12, 13");
+    assert(a1 == 11 && a2 == 12 && a3 == 13);
+    lua::tie(a1) = state.doString("return 21, 12, 13");
+    assert(a1 == 21);
+    lua::tie(a1, a2, a3) = state.doString("return 11");
+    assert(a1 == 11);
+    
+    // Check returning values from doFile
+    luaFile.open("test.lua");
+    luaFile << "return 11, 12, 13" << std::endl;
+    luaFile.close();
+    
+    a1 = state.doFile("test.lua");
+    assert(a1 == 11);
+    lua::tie(a1, a2, a3) = state.doFile("test.lua");
+    assert(a1 == 11 && a2 == 12 && a3 == 13);
+    
     state.checkMemLeaks();
     return 0;
 }

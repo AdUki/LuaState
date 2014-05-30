@@ -26,7 +26,7 @@ namespace lua {
                                       detail::DeallocQueue* deallocQueue,
                                       int stackTop)
             {
-                return lua::Value(luaState, deallocQueue, stackTop - 1);
+                return lua::Value(std::make_shared<detail::StackItem>(luaState, deallocQueue, stackTop - 1, 1, 0));
             }
             
             /// Function creates indexes for mutli values and get them from stack

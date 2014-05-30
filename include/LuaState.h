@@ -66,6 +66,16 @@ namespace lua {
             return 0;
         }
         
+        lua::Value executeLoadedFunction(int index) {
+            if (lua_pcall(_luaState, 0, LUA_MULTRET, 0)) {
+                std::string message = stack::read<std::string>(_luaState, -1);
+                stack::pop(_luaState, 1);
+                throw RuntimeError(message);
+            }
+            int pushedValues = stack::top(_luaState) - index;
+            return lua::Value(std::make_shared<detail::StackItem>(_luaState, _deallocQueue, index, pushedValues, pushedValues > 0 ? pushedValues - 1 : 0));
+        }
+        
     public:
         
         /// Constructor creates new state and stores it to pointer.
@@ -130,17 +140,14 @@ namespace lua {
         /// @throws lua::RuntimeError   When there is runtime error
         ///
         /// @param filePath File path indicating which file will be executed
-        void doFile(const std::string& filePath) {
+        lua::Value doFile(const std::string& filePath) {
+            int stackTop = stack::top(_luaState);
             if (luaL_loadfile(_luaState, filePath.c_str())) {
                 std::string message = stack::read<std::string>(_luaState, -1);
                 stack::pop(_luaState, 1);
                 throw LoadError(message);
             }
-            if (lua_pcall(_luaState, 0, LUA_MULTRET, 0)) {
-                std::string message = stack::read<std::string>(_luaState, -1);
-                stack::pop(_luaState, 1);
-                throw RuntimeError(message);
-            }
+            return executeLoadedFunction(stackTop);
         }
         
         /// Execute string on Lua state
@@ -149,17 +156,14 @@ namespace lua {
         /// @throws lua::RuntimeError   When there is runtime error
         ///
         /// @param string   Command which will be executed
-        void doString(const std::string& string) {
+        lua::Value doString(const std::string& string) {
+            int stackTop = stack::top(_luaState);
             if (luaL_loadstring(_luaState, string.c_str())) {
                 std::string message = stack::read<std::string>(_luaState, -1);
                 stack::pop(_luaState, 1);
                 throw LoadError(message);
             }
-            if (lua_pcall(_luaState, 0, LUA_MULTRET, 0)) {
-                std::string message = stack::read<std::string>(_luaState, -1);
-                stack::pop(_luaState, 1);
-                throw RuntimeError(message);
-            }
+            return executeLoadedFunction(stackTop);
         }
 
 #ifdef LUASTATE_DEBUG_MODE

@@ -29,15 +29,6 @@ namespace lua {
         
         std::shared_ptr<detail::StackItem> _stack;
         
-        /// Constructor for creating lua::Ref instances
-        ///
-        /// @param luaState     Pointer of Lua state
-        /// @param deallocQueue Queue for deletion values initialized from given luaState
-        Value(lua_State* luaState, detail::DeallocQueue* deallocQueue)
-        : _stack(std::make_shared<detail::StackItem>(luaState, deallocQueue, stack::top(luaState), 0, 0))
-        {
-        }
-        
         /// Constructor for lua::State class. Whill get global in _G table with name
         ///
         /// @param luaState     Pointer of Lua state
@@ -50,9 +41,13 @@ namespace lua {
         }
         
         template<typename ... Ts>
-        int callFunction(bool protectedCall, Ts... args) const {
+        void callFunction(bool protectedCall, Ts... args) const {
+            
+            // Function must be on top of stack
+            LUASTATE_ASSERT(stack::check<Callable>(_stack->state, stack::top(_stack->state)));
             
             stack::push(_stack->state, args...);
+            
             if (protectedCall) {
                 if (lua_pcall(_stack->state, sizeof...(Ts), LUA_MULTRET, 0)) {
                     const char* error = lua_tostring(_stack->state, -1);
@@ -62,31 +57,36 @@ namespace lua {
             }
             else
                 lua_call(_stack->state, sizeof...(Ts), LUA_MULTRET);
-            
-            return stack::top(_stack->state) - (_stack->top + _stack->pushed - _stack->grouped);
         }
 
         template<typename ... Ts>
         Value&& executeFunction(bool protectedCall, Ts... args) {
             
+            int stackTop = stack::top(_stack->state);
+            
             // we check if there are not pushed values before function
-            if (_stack->top + _stack->pushed < stack::top(_stack->state)) {
+            if (_stack->top + _stack->pushed < stackTop) {
                 
                 _stack->deallocQueue->push(detail::DeallocStackItem(_stack->top, _stack->pushed));
 
                 lua_pushvalue(_stack->state, _stack->top + 1);
                 
-                _stack->top = stack::top(_stack->state) - 1;
+                _stack->top = stackTop;
                 _stack->pushed = 1;
                 _stack->grouped = 0;
+                
+                ++stackTop;
             }
             
-            // Function must be on top of stack
+            // StackItem top must same as top of current stack
             LUASTATE_ASSERT(_stack->top + _stack->pushed == stack::top(_stack->state));
-            LUASTATE_ASSERT(stack::check<Callable>(_stack->state, stack::top(_stack->state)));
             
-            _stack->grouped = callFunction(protectedCall, args...);
+            callFunction(protectedCall, args...);
+
+            _stack->grouped = stack::top(_stack->state) - stackTop;
             _stack->pushed += _stack->grouped;
+
+            LUASTATE_ASSERT(_stack->pushed >= 0);
             
             return std::move(*this);
         }
@@ -94,21 +94,17 @@ namespace lua {
         template<typename ... Ts>
         Value executeFunction(bool protectedCall, Ts... args) const & {
             
-            Value value(_stack->state, _stack->deallocQueue);
-            int returnedValues = _stack->top + _stack->pushed - stack::top(_stack->state);
-            
+            int stackTop = stack::top(_stack->state);
+
             // We will duplicate Lua function value, because it will get poped from stack
             lua_pushvalue(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
             
-            // Function must be on top of stack
-            LUASTATE_ASSERT(stack::check<Callable>(_stack->state, stack::top(_stack->state)));
+            callFunction(protectedCall, args...);
+            int returnedValues = stack::top(_stack->state) - stackTop;
             
-            returnedValues += callFunction(protectedCall, args...);
-            value._stack->grouped = returnedValues == 0 ? 0 : returnedValues - 1;
-            value._stack->pushed += returnedValues;
+            LUASTATE_ASSERT(returnedValues >= 0);
             
-            LUASTATE_ASSERT(_stack->grouped >= 0);
-            return value;
+            return Value(std::make_shared<detail::StackItem>(_stack->state, _stack->deallocQueue, stackTop, returnedValues, returnedValues == 0 ? 0 : returnedValues - 1));
         }
         
         /// We will check reference count and upon deletion we will restore stack to original value or push values to priority queue
@@ -120,19 +116,13 @@ namespace lua {
         /// Enable to initialize empty Value, so we can set it up later
         Value() : _stack(nullptr) {
         }
-            
-        /// Constructor for returning values from functions
+
+        /// Constructor for returning values from functions and for creating lua::Ref instances
         ///
-        /// @param luaState     Pointer of Lua state
-        /// @param deallocQueue Queue for deletion values initialized from given luaState
-        /// @param index        Index of value which is already in stack
-        Value(lua_State* luaState, detail::DeallocQueue* deallocQueue, int index)
+        /// @param stackItem Prepared stack item
+        Value(std::shared_ptr<detail::StackItem>&& stackItem)
+        : _stack(stackItem)
         {
-            if (stack::top(luaState) < index)
-                // We request more values, that are returned
-                _stack = std::make_shared<detail::StackItem>(luaState, nullptr, 0, 0, 0);
-            else
-                _stack = std::make_shared<detail::StackItem>(luaState, deallocQueue, index, 1, 0);
         }
         
         ~Value() {}
@@ -148,11 +138,8 @@ namespace lua {
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
         template<typename T>
         Value operator[](T key) const {
-            Value value(_stack->state, _stack->deallocQueue);
             stack::get(_stack->state, _stack->top + _stack->pushed - _stack->grouped, key);
-            value._stack->pushed = 1;
-            
-            return value;
+            return Value(std::make_shared<detail::StackItem>(_stack->state, _stack->deallocQueue, stack::top(_stack->state) - 1, 1, 0));;
         }
         
         /// While chaining [] operators we will call this function multiple times and can query nested tables.
