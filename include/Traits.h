@@ -96,6 +96,6 @@ namespace lua { namespace traits {
     
     template <std::size_t... Is>
     struct indexes_builder<0, Is...> {
-        using index = indexes<Is...>;
+        typedef indexes<Is...> index;
     };
 }}
