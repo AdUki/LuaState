@@ -130,6 +130,8 @@ namespace lua {
             return Value(std::make_shared<detail::StackItem>(_stack->state, _stack->deallocQueue, stack::top(_stack->state) - 1, 1, 0));;
         }
         
+#if __has_feature(cxx_reference_qualified_functions)
+        
         /// While chaining [] operators we will call this function multiple times and can query nested tables.
         ///
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
@@ -142,6 +144,8 @@ namespace lua {
             
             return std::forward<Value>(*this);
         }
+        
+#endif
         
         /// Call given value.
         ///
