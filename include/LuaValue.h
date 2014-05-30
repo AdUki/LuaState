@@ -127,7 +127,7 @@ namespace lua {
         template<typename T>
         Value operator[](T key) const {
             stack::get(_stack->state, _stack->top + _stack->pushed - _stack->grouped, key);
-            return Value(std::make_shared<detail::StackItem>(_stack->state, _stack->deallocQueue, stack::top(_stack->state) - 1, 1, 0));;
+            return Value(std::make_shared<detail::StackItem>(_stack->state, _stack->deallocQueue, stack::top(_stack->state) - 1, 1, 0));
         }
         
 #if __has_feature(cxx_reference_qualified_functions)

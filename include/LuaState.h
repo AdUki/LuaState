@@ -81,13 +81,7 @@ namespace lua {
             return lua::Value(std::make_shared<detail::StackItem>(_luaState, _deallocQueue, index, pushedValues, pushedValues > 0 ? pushedValues - 1 : 0));
         }
         
-    public:
-        
-        /// Constructor creates new state and stores it to pointer.
-        ///
-        /// @param loadLibs     If we want to open standard libraries - function luaL_openlibs
-        State(bool loadLibs) {
-            
+        void initialize(bool loadLibs) {
             _deallocQueue = new detail::DeallocQueue();
             _luaState = luaL_newstate();
             assert(_luaState != nullptr);
@@ -111,8 +105,15 @@ namespace lua {
             lua_pop(_luaState, 1);
         }
         
+    public:
+        
+        /// Constructor creates new state and stores it to pointer.
+        ///
+        /// @param loadLibs     If we want to open standard libraries - function luaL_openlibs
+        State(bool loadLibs) { initialize(loadLibs); }
+        
         /// Constructor creates new state stores it to pointer and loads standard libraries
-        State() : State(true) {}
+        State() { initialize(true); }
         
         ~State() {
             lua_close(_luaState);
