@@ -93,8 +93,24 @@ int main(int argc, char** argv)
     assert(state["lambda"](1, 0, 1, int(state["a"])) == 40);
     assert(state["lambda"](int(state["a"]), int(state["a"]), int(state["a"]), int(state["a"])) == 152);
     
+    // Test when we provide less arguments than we need
     state.set("lambda", [&intValue](int a, int b, int c, int d) {
-        printf("intValue = %d + %d + %d + %d\n", a, b, c, d);
+        intValue = a + b;
+    });
+    state.doString("lambda(4, 8)");
+    assert(intValue == 12);
+    state.doString("lambda(1,2)");
+    assert(intValue == 3);
+    {
+        lua::Value nilValue1 = state["novaluehere"];
+        lua::Value nilValue2 = state["novaluehere"];
+        lua::Value nilValue3 = state["novaluehere"];
+        state.doString("lambda(1,2)");
+        assert(intValue == 3);
+    }
+    
+    // Test passing reference to capture
+    state.set("lambda", [&intValue](int a, int b, int c, int d) {
         intValue = a + b + c + d;
     });
     state.doString("lambda(4, 8, 12, 14)");
@@ -109,17 +125,6 @@ int main(int argc, char** argv)
         lua::Value nilValue3 = state["novaluehere"];
         state.doString("lambda(1,2,3,4,5,6,7,8,9)");
         assert(intValue == 10);
-    }
-    
-    // Test when we provide less arguments than we need
-    state.doString("lambda(1,2)");
-    assert(intValue == 3);
-    {
-        lua::Value nilValue1 = state["novaluehere"];
-        lua::Value nilValue2 = state["novaluehere"];
-        lua::Value nilValue3 = state["novaluehere"];
-        state.doString("lambda(1,2)");
-        assert(intValue == 3);
     }
     
     // Test multi return
