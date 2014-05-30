@@ -66,7 +66,6 @@ namespace lua { namespace detail {
                 // Check if we dont try to release same values twice
                 int currentStackTop = stack::top(state);
                 if (currentStackTop < pushed + top) {
-                    stack::dump(state);
                     return;
                 }
                 

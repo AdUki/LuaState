@@ -58,7 +58,23 @@ namespace lua {
             else
                 lua_call(_stack->state, sizeof...(Ts), LUA_MULTRET);
         }
-
+        
+        template<typename ... Ts>
+        Value executeFunction(bool protectedCall, Ts... args) const {
+            
+            int stackTop = stack::top(_stack->state);
+            
+            // We will duplicate Lua function value, because it will get poped from stack
+            lua_pushvalue(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
+            
+            callFunction(protectedCall, args...);
+            int returnedValues = stack::top(_stack->state) - stackTop;
+            
+            LUASTATE_ASSERT(returnedValues >= 0);
+            
+            return Value(std::make_shared<detail::StackItem>(_stack->state, _stack->deallocQueue, stackTop, returnedValues, returnedValues == 0 ? 0 : returnedValues - 1));
+        }
+        
         template<typename ... Ts>
         Value&& executeFunction(bool protectedCall, Ts... args) {
             
@@ -91,26 +107,6 @@ namespace lua {
             return std::move(*this);
         }
         
-        template<typename ... Ts>
-        Value executeFunction(bool protectedCall, Ts... args) const & {
-            
-            int stackTop = stack::top(_stack->state);
-
-            // We will duplicate Lua function value, because it will get poped from stack
-            lua_pushvalue(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
-            
-            callFunction(protectedCall, args...);
-            int returnedValues = stack::top(_stack->state) - stackTop;
-            
-            LUASTATE_ASSERT(returnedValues >= 0);
-            
-            return Value(std::make_shared<detail::StackItem>(_stack->state, _stack->deallocQueue, stackTop, returnedValues, returnedValues == 0 ? 0 : returnedValues - 1));
-        }
-        
-        /// We will check reference count and upon deletion we will restore stack to original value or push values to priority queue
-        inline void deleteValue() {
-        }
-        
     public:
         
         /// Enable to initialize empty Value, so we can set it up later
@@ -125,14 +121,6 @@ namespace lua {
         {
         }
         
-        ~Value() {}
-
-        Value(Value&& value) = default;
-        Value(const Value& value) = default;
-        
-        Value& operator= (Value && value) && = default;
-        Value& operator= (const Value& value) = default;
-
         /// With this function we will create lua::Ref instance
         ///
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
@@ -159,24 +147,26 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
-        Value operator()(Ts... args) const & {
-            return executeFunction(false, args...);
-        }
-        
-        /// Call given value.
-        ///
-        /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
-        template<typename ... Ts>
-        Value&& operator()(Ts... args) && {
-            return std::forward<Value>(executeFunction(false, args...));
+        Value operator()(Ts... args) const {
+            return  executeFunction(false, args...);
         }
         
         /// Protected call of given value.
         ///
         /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
         template<typename ... Ts>
-        Value call(Ts... args) const & {
+        Value call(Ts... args) const {
             return executeFunction(true, args...);
+        }
+        
+#if __has_feature(cxx_reference_qualified_functions)
+        
+        /// Call given value.
+        ///
+        /// @note This function doesn't check if current value is lua::Callable. You must use is<lua::Callable>() function if you want to be sure
+        template<typename ... Ts>
+        Value&& operator()(Ts... args) && {
+            return executeFunction(false, args...);
         }
         
         /// Protected call of given value.
@@ -187,6 +177,8 @@ namespace lua {
             return executeFunction(true, args...);
         }
         
+#endif
+        
         /// Cast operator. Enables to pop values from stack and store it to variables
         ///
         /// @return Any value of type from LuaPrimitives.h
@@ -194,7 +186,7 @@ namespace lua {
         operator T() const {
             return stack::read<T>(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
         }
-
+        
         /// Set values to table to the given key.
         ///
         /// @param key      Key to which value will be stored

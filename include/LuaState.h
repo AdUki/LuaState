@@ -10,6 +10,19 @@
 
 #pragma once
 
+// Compatibility with non-clang compilers.
+#ifndef __has_feature
+#   define __has_feature(x) 0
+#endif
+
+#ifdef LUASTATE_DEBUG_MODE
+#   define LUASTATE_DEBUG_LOG(format, ...) printf(format "\n", ## __VA_ARGS__)
+#   define LUASTATE_ASSERT(condition)      assert(condition)
+#else
+#   define LUASTATE_DEBUG_LOG(format, ...)
+#   define LUASTATE_ASSERT(condition)
+#endif
+
 #include <cassert>
 #include <string>
 #include <functional>
@@ -19,14 +32,6 @@
 #include <cmath>
 
 #include <lua.hpp>
-
-#ifdef LUASTATE_DEBUG_MODE
-#   define LUASTATE_DEBUG_LOG(format, ...) printf(format "\n", ## __VA_ARGS__)
-#   define LUASTATE_ASSERT(condition)      assert(condition)
-#else
-#   define LUASTATE_DEBUG_LOG(format, ...)
-#   define LUASTATE_ASSERT(condition)
-#endif
 
 #include "./Traits.h"
 
