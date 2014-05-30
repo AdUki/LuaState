@@ -34,7 +34,7 @@ namespace lua { namespace detail {
     struct StackItem {
         
         lua_State* state;
-        detail::DeallocQueue* deallocQueue = nullptr;
+        detail::DeallocQueue* deallocQueue;
         
         /// Indicates number of pushed values to stack on lua::Value when created
         int top;
