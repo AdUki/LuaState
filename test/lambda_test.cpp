@@ -94,13 +94,23 @@ int main(int argc, char** argv)
     assert(state["lambda"](int(state["a"]), int(state["a"]), int(state["a"]), int(state["a"])) == 152);
     
     // Test when we provide less arguments than we need
-    state.set("lambda", [&intValue](int a, int b, int c, int d) {
-        intValue = a + b;
+    state.set("lambda", [&intValue](lua::Value a, lua::Value b, lua::Value c, lua::Value d) {
+        intValue =
+        (a.is<lua::Number>() ? a : 0) +
+        (b.is<lua::Number>() ? b : 0) +
+        (c.is<lua::Number>() ? c : 0) +
+        (d.is<lua::Number>() ? d : 0);
     });
+    state.doString("lambda()");
+    assert(intValue == 0);
+    state.doString("lambda(5)");
+    assert(intValue == 5);
     state.doString("lambda(4, 8)");
     assert(intValue == 12);
-    state.doString("lambda(1,2)");
-    assert(intValue == 3);
+    state.doString("lambda(1, 2, 3)");
+    assert(intValue == 6);
+    state.doString("lambda(1, 2, 3, 4)");
+    assert(intValue == 10);
     {
         lua::Value nilValue1 = state["novaluehere"];
         lua::Value nilValue2 = state["novaluehere"];
