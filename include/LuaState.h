@@ -71,7 +71,7 @@ namespace lua {
             return 0;
         }
         
-        lua::Value executeLoadedFunction(int index) {
+        lua::Value executeLoadedFunction(int index) const {
             if (lua_pcall(_luaState, 0, LUA_MULTRET, 0))
                 throw RuntimeError(_luaState);
             
@@ -125,7 +125,7 @@ namespace lua {
         /// Query global values from Lua state
         ///
         /// @return Some value with type lua::Type
-        Value operator[](lua::String name) {
+        Value operator[](lua::String name) const {
             return Value(_luaState, _deallocQueue, name);
         }
         
@@ -137,7 +137,7 @@ namespace lua {
         /// @param key      Stores value to _G[key]
         /// @param value    Value witch will be stored to _G[key]
         template<typename T>
-        void set(lua::String key, T value) {
+        void set(lua::String key, T value) const {
             stack::push(_luaState, std::forward<T>(value));
             lua_setglobal(_luaState, key);
         }
@@ -148,7 +148,7 @@ namespace lua {
         /// @throws lua::RuntimeError   When there is runtime error
         ///
         /// @param filePath File path indicating which file will be executed
-        lua::Value doFile(const std::string& filePath) {
+        lua::Value doFile(const std::string& filePath) const {
             int stackTop = stack::top(_luaState);
             
             if (luaL_loadfile(_luaState, filePath.c_str()))
@@ -163,7 +163,7 @@ namespace lua {
         /// @throws lua::RuntimeError   When there is runtime error
         ///
         /// @param string   Command which will be executed
-        lua::Value doString(const std::string& string) {
+        lua::Value doString(const std::string& string) const {
             int stackTop = stack::top(_luaState);
             
             if (luaL_loadstring(_luaState, string.c_str()))
