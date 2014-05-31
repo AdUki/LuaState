@@ -43,7 +43,6 @@ namespace lua { namespace stack {
         return sizeof...(Args);
     }
     
-    template<>
     inline int push(lua_State* luaState) { return 0; }
 
     template<>

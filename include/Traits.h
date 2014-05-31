@@ -75,13 +75,13 @@ namespace lua { namespace traits {
     }
     
     template<class ... Args>
-    void apply(std::function<void(Args...)> pf, const std::tuple<Args...>&  tup)
+    void apply_no_ret(std::function<void(Args...)> pf, const std::tuple<Args...>&  tup)
     {
         apply_helper(pf, typename make_indexes<Args...>::type(), std::tuple<Args...>(tup));
     }
     
     template<class ... Args>
-    void apply(std::function<void(Args...)> pf, std::tuple<Args...>&&  tup)
+    void apply_no_ret(std::function<void(Args...)> pf, std::tuple<Args...>&&  tup)
     {
         apply_helper(pf, typename make_indexes<Args...>::type(), std::forward<std::tuple<Args...>>(tup));
     }

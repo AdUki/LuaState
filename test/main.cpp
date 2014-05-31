@@ -15,8 +15,18 @@ void runTest(const std::string& filename)
     printf("#####################################\n");
     printf("##  Running test: %s\n", filename.c_str());
     printf("#####################################\n\n");
-    
-    if (system(std::string("./" + filename).c_str()) == 0)
+
+	// TODO: search for executables
+
+#ifdef WIN32
+	// NOTE: add your own directory according to project
+	std::string prefix = "Debug\\";
+	std::string suffix = ".exe";
+#else
+	std::string prefix = "./";
+	std::string suffix = "";
+#endif
+	if (system(std::string(prefix + filename + suffix).c_str()) == 0)
         printf("Test %s OK...\n\n", filename.c_str());
     else {
         printf("Test %s FAILED!\n\n", filename.c_str());

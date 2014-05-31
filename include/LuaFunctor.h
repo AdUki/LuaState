@@ -75,7 +75,7 @@ namespace lua {
         ///
         /// @param luaState     Pointer of Lua state
         int call(lua_State* luaState) {
-            traits::apply(function, stack::get_and_pop<Args...>(luaState, nullptr, 2));
+            traits::apply_no_ret(function, stack::get_and_pop<Args...>(luaState, nullptr, 2));
             return 0;
         }
     };
