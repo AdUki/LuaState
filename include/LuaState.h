@@ -118,6 +118,10 @@ namespace lua {
             delete _deallocQueue;
         }
         
+        // State is non-copyable
+        State(const State& other) = delete;
+        State& operator=(const State&) = delete;
+        
         /// Query global values from Lua state
         ///
         /// @return Some value with type lua::Type
