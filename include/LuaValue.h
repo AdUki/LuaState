@@ -49,11 +49,8 @@ namespace lua {
             stack::push(_stack->state, args...);
             
             if (protectedCall) {
-                if (lua_pcall(_stack->state, sizeof...(Ts), LUA_MULTRET, 0)) {
-                    const char* error = lua_tostring(_stack->state, -1);
-                    lua_pop(_stack->state, 1);
-                    throw RuntimeError(error);
-                }
+                if (lua_pcall(_stack->state, sizeof...(Ts), LUA_MULTRET, 0))
+                    throw RuntimeError(_stack->state);
             }
             else
                 lua_call(_stack->state, sizeof...(Ts), LUA_MULTRET);
@@ -188,7 +185,7 @@ namespace lua {
         /// @return Any value of type from LuaPrimitives.h
         template<typename T>
         operator T() const {
-            return stack::read<T>(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
+            return std::forward<T>(stack::read<T>(_stack->state, _stack->top + _stack->pushed - _stack->grouped));
         }
         
         /// Set values to table to the given key.
@@ -198,9 +195,9 @@ namespace lua {
         ///
         /// @note This function doesn't check if current value is lua::Table. You must use is<lua::Table>() function if you want to be sure
         template<typename K, typename T>
-        void set(const K& key, const T& value) const {
+        void set(K key, T value) const {
             stack::push(_stack->state, key);
-            stack::push(_stack->state, value);
+            stack::push(_stack->state, std::forward<T>(value));
             lua_settable(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
         }
 

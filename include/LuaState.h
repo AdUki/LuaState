@@ -72,11 +72,9 @@ namespace lua {
         }
         
         lua::Value executeLoadedFunction(int index) {
-            if (lua_pcall(_luaState, 0, LUA_MULTRET, 0)) {
-                std::string message = stack::read<std::string>(_luaState, -1);
-                stack::pop(_luaState, 1);
-                throw RuntimeError(message);
-            }
+            if (lua_pcall(_luaState, 0, LUA_MULTRET, 0))
+                throw RuntimeError(_luaState);
+            
             int pushedValues = stack::top(_luaState) - index;
             return lua::Value(std::make_shared<detail::StackItem>(_luaState, _deallocQueue, index, pushedValues, pushedValues > 0 ? pushedValues - 1 : 0));
         }
@@ -135,8 +133,8 @@ namespace lua {
         /// @param key      Stores value to _G[key]
         /// @param value    Value witch will be stored to _G[key]
         template<typename T>
-        void set(lua::String key, const T& value) const {
-            stack::push(_luaState, value);
+        void set(lua::String key, T value) {
+            stack::push(_luaState, std::forward<T>(value));
             lua_setglobal(_luaState, key);
         }
         
@@ -148,11 +146,10 @@ namespace lua {
         /// @param filePath File path indicating which file will be executed
         lua::Value doFile(const std::string& filePath) {
             int stackTop = stack::top(_luaState);
-            if (luaL_loadfile(_luaState, filePath.c_str())) {
-                std::string message = stack::read<std::string>(_luaState, -1);
-                stack::pop(_luaState, 1);
-                throw LoadError(message);
-            }
+            
+            if (luaL_loadfile(_luaState, filePath.c_str()))
+                throw LoadError(_luaState);
+            
             return executeLoadedFunction(stackTop);
         }
         
@@ -164,11 +161,10 @@ namespace lua {
         /// @param string   Command which will be executed
         lua::Value doString(const std::string& string) {
             int stackTop = stack::top(_luaState);
-            if (luaL_loadstring(_luaState, string.c_str())) {
-                std::string message = stack::read<std::string>(_luaState, -1);
-                stack::pop(_luaState, 1);
-                throw LoadError(message);
-            }
+            
+            if (luaL_loadstring(_luaState, string.c_str()))
+                throw LoadError(_luaState);
+
             return executeLoadedFunction(stackTop);
         }
 
@@ -199,7 +195,7 @@ namespace lua {
             assert(noLeaks);
         }
         
-        void stackDump() {
+        void stackDump() const {
             lua::stack::dump(_luaState);
         }
 #endif

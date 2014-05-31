@@ -27,7 +27,7 @@ namespace lua { namespace traits {
         
         template <size_t i>
         struct Arg {
-            typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
+            typedef typename std::tuple_element<i, std::tuple<Args...>>::type Type;
         };
     };
 

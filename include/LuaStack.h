@@ -19,18 +19,32 @@ namespace lua { namespace stack {
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
-
-    inline int push(lua_State* luaState) { return 0; }
     
     template<typename T>
     inline int push(lua_State* luaState, T value);
     
     template<typename T, typename ... Ts>
-    inline int push(lua_State* luaState, const T value, const Ts... values) {
-        push(luaState, value);
+    inline int push(lua_State* luaState, T value, Ts... values) {
+        push(luaState, std::forward<T>(value));
         push(luaState, values...);
         return sizeof...(Ts) + 1;
     }
+    
+    template<typename ... Args, size_t ... Indexes>
+    void push_tuple(lua_State* luaState, traits::index_tuple< Indexes... >, const std::tuple<Args...>& tup)
+    {
+        push(luaState, std::get<Indexes>(tup)...);
+    }
+    
+    template<typename ... Args>
+    inline int push(lua_State* luaState, const std::tuple<Args...>& tuple)
+    {
+        push_tuple(luaState, typename traits::make_indexes<Args...>::type(), tuple);
+        return sizeof...(Args);
+    }
+    
+    template<>
+    inline int push(lua_State* luaState) { return 0; }
 
     template<>
     inline int push(lua_State* luaState, int value) {
@@ -152,25 +166,6 @@ namespace lua { namespace stack {
         LUASTATE_DEBUG_LOG("  PUSH  newTable\n");
         lua_newtable(luaState);
         return 1;
-    }
-    
-    template<>
-    inline int push(lua_State* luaState, const std::string& value) {
-        push<lua::String>(luaState, value.c_str());
-        return 1;
-    }
-
-    template<typename ... Args, size_t ... Indexes>
-    void push_helper(lua_State* luaState, traits::index_tuple< Indexes... >, const std::tuple<Args...>& tup)
-    {
-        push(luaState, std::get<Indexes>(tup)...);
-    }
-    
-    template<typename ... Args>
-    inline int push(lua_State* luaState, const std::tuple<Args...>& tuple)
-    {
-        push_helper(luaState, typename traits::make_indexes<Args...>::type(), tuple);
-        return sizeof...(Args);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -312,7 +307,7 @@ namespace lua { namespace stack {
 
     template<>
     inline lua::String read(lua_State* luaState, int index) {
-        return lua_tostring(luaState, index);;
+        return lua_tostring(luaState, index);
     }
 
     template<>
@@ -348,11 +343,6 @@ namespace lua { namespace stack {
     template<>
     inline char read(lua_State* luaState, int index) {
         return static_cast<char>(lua_tostring(luaState, index)[0]);
-    }
-    
-    template<>
-    inline std::string read(lua_State* luaState, int index) {
-        return read<lua::String>(luaState, index);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////

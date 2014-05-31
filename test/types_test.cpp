@@ -230,7 +230,7 @@ int main(int argc, char** argv)
 //    const wchar_t*         wcharString;
 //    const char16_t*        char16String;
 //    const char32_t*        char32String;
-
+    
     state.set("value", 'x');
     assert(state["value"] == 'x');
     state.set("value", "ahoj");
@@ -245,6 +245,12 @@ int main(int argc, char** argv)
     assert(strcmp(state["text"], "bannana") != 0);
     assert(strcmp(charString = state["text"], "hello") == 0);
     assert(strcmp(charString = state["text"], "bannana") != 0);
+
+//    std::string stringValue;
+//    assert(std::string(state["text"]) == "hello");
+//    assert(state["text"] == "bannana");
+//    assert((stringValue = state["text"]) == "hello");
+//    assert((stringValue = state["text"]) == "bannana");
     
     state.checkMemLeaks();
     return 0;

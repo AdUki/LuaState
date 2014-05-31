@@ -50,13 +50,11 @@ namespace lua {
         std::string _message;
         
     public:
-        LoadError(const std::string& message) : _message(message) {}
-        virtual ~LoadError() throw() {}
+        LoadError(lua_State* luaState)
+        : _message(lua_tostring(luaState, -1)) { lua_pop(luaState, 1); }
         
-        virtual const char* what() const throw()
-        {
-            return _message.c_str();
-        }
+        virtual ~LoadError() throw() {}
+        virtual const char* what() const throw() { return _message.c_str(); }
     };
     
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,12 +65,10 @@ namespace lua {
         std::string _message;
         
     public:
-        RuntimeError(const std::string& message) : _message(message) {}
-        virtual ~RuntimeError() throw() {}
+        RuntimeError(lua_State* luaState)
+        : _message(lua_tostring(luaState, -1)) { lua_pop(luaState, 1); }
         
-        virtual const char* what() const throw()
-        {
-            return _message.c_str();
-        }
+        virtual ~RuntimeError() throw() {}
+        virtual const char* what() const throw() { return _message.c_str(); }
     };
 }

@@ -80,18 +80,18 @@ int main(int argc, char** argv)
     // Test direct passing to functions
     {
         lua::Value value = state["lambda"];
-        assert(value(int(state["a"]), 1, 0, 1) == 40);
-        assert(value(1, int(state["a"]), 0, 1) == 40);
-        assert(value(1, 0, int(state["a"]), 1) == 40);
-        assert(value(1, 0, 1, int(state["a"])) == 40);
-        assert(value(int(state["a"]), int(state["a"]), int(state["a"]), int(state["a"])) == 152);
+        assert(value(state["a"], 1, 0, 1) == 40);
+        assert(value(1, state["a"], 0, 1) == 40);
+        assert(value(1, 0, state["a"], 1) == 40);
+        assert(value(1, 0, 1, state["a"]) == 40);
+        assert(value(state["a"], state["a"], state["a"], state["a"]) == 152);
     }
     
-    assert(state["lambda"](int(state["a"]), 1, 0, 1) == 40);
-    assert(state["lambda"](1, int(state["a"]), 0, 1) == 40);
-    assert(state["lambda"](1, 0, int(state["a"]), 1) == 40);
-    assert(state["lambda"](1, 0, 1, int(state["a"])) == 40);
-    assert(state["lambda"](int(state["a"]), int(state["a"]), int(state["a"]), int(state["a"])) == 152);
+    assert(state["lambda"](state["a"], 1, 0, 1) == 40);
+    assert(state["lambda"](1, state["a"], 0, 1) == 40);
+    assert(state["lambda"](1, 0, state["a"], 1) == 40);
+    assert(state["lambda"](1, 0, 1, state["a"]) == 40);
+    assert(state["lambda"](state["a"], state["a"], state["a"], state["a"]) == 152);
     
     // Test when we provide less arguments than we need
     state.set("lambda", [&intValue](lua::Value a, lua::Value b, lua::Value c, lua::Value d) {
