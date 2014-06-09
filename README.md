@@ -5,6 +5,15 @@ LuaState
 
 Lightweight Lua51 binding library for C++11.
 
+#### Main features:
+ * While getting values from `lua_State*` library does not use vectors or lists for memoization of key values. It uses values which are already in native Lua C API stack and simple int variables to index them.
+ * To keep Lua C API stack clean. When we create lua_State*, library automaticaly creates priority queue, where we keep when and which Lua values can be removed from stack. This can be big performacne gain while querying deep structures from tables.
+ * We can bind lamba functions, where captured variables are managed by Lua garbage collector.
+ * No nesting C preprocessor macros to bind our classes. We can use only C++11 code and bind our classes with capture lists of lambdas. This way we can bind anything: function, variables, pointers...
+ * When we can bind almost ANY function. There is no predefined form. In that way we can avoid boilerplate code and parameters can be self documented with their names.
+ * Multiple return values with `std::tuples` - `lua::tie` (same syntax as `std::tie`).
+ * We can directly pass lua values (tables for instance) around in C++ code. For example we can return table from one Lua function and put this table as parameter to another Lua function. All this just in C++.
+
 ### Setting it up
 
 Just create lua::State variable, which will initialize lus_State and loads up standard libraries. It will close state automatically in destructor.
