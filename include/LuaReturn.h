@@ -26,8 +26,8 @@ namespace lua {
                                       detail::DeallocQueue* deallocQueue,
                                       int stackTop)
             {
-                if (!stack::check<T>(luaState, stackTop))
-                    throw lua::TypeMismatchError(luaState, stackTop);
+//                if (!stack::check<T>(luaState, stackTop))
+//                    throw lua::TypeMismatchError(luaState, stackTop);
                 
                 return lua::Value(std::make_shared<detail::StackItem>(luaState, deallocQueue, stackTop - 1, 1, 0));
             }
