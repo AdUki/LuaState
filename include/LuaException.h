@@ -44,7 +44,7 @@ namespace lua {
         
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     class LoadError: public std::exception
     {
         std::string _message;
@@ -57,9 +57,7 @@ namespace lua {
         virtual const char* what() const throw() { return _message.c_str(); }
     };
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
-    /// Don't forget to call execute manualy while using protected call!
-    /// Exceptions cannot be catched while throwed in destructor...
+    //////////////////////////////////////////////////////////////////////////////////////////////
     class RuntimeError: public std::exception
     {
         std::string _message;
@@ -70,5 +68,22 @@ namespace lua {
         
         virtual ~RuntimeError() throw() {}
         virtual const char* what() const throw() { return _message.c_str(); }
+    };
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    class TypeMismatchError : public std::exception
+    {
+        int _stackIndex;
+        char _message[255];
+        
+    public:
+        TypeMismatchError(lua_State* luaState, int index)
+        : _stackIndex(index) {  }
+        
+        virtual ~TypeMismatchError() throw() { }
+        virtual const char* what() const throw() {
+            sprintf((char *)_message, "Type mismatch error at index %d.", _stackIndex);
+            return _message;
+        }
     };
 }

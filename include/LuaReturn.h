@@ -10,11 +10,11 @@
 
 namespace lua {
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     namespace stack {
         
         
-        //////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////
         template<std::size_t I, typename ... Ts>
         class Pop {
             
@@ -26,6 +26,9 @@ namespace lua {
                                       detail::DeallocQueue* deallocQueue,
                                       int stackTop)
             {
+                if (!stack::check<T>(luaState, stackTop))
+                    throw lua::TypeMismatchError(luaState, stackTop);
+                
                 return lua::Value(std::make_shared<detail::StackItem>(luaState, deallocQueue, stackTop - 1, 1, 0));
             }
             
@@ -62,7 +65,7 @@ namespace lua {
         
     }
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     /// Class for automaticly cas lua::Function instance to multiple return values with lua::tie
 	template <typename ... Ts>
 	class Return

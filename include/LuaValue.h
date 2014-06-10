@@ -15,7 +15,7 @@ namespace lua {
     class Ref;
     template <typename ... Ts> class Return;
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     /// This is class for:
     /// * querying values from lua tables,
     /// * setting values to lua tables,
@@ -180,12 +180,17 @@ namespace lua {
         
 #endif
         
+        template<typename T>
+        T to() const {
+            return std::forward<T>(stack::read<T>(_stack->state, _stack->top + _stack->pushed - _stack->grouped));
+        }
+        
         /// Cast operator. Enables to pop values from stack and store it to variables
         ///
         /// @return Any value of type from LuaPrimitives.h
         template<typename T>
         operator T() const {
-            return std::forward<T>(stack::read<T>(_stack->state, _stack->top + _stack->pushed - _stack->grouped));
+            return to<T>();
         }
         
         /// Set values to table to the given key.
@@ -223,24 +228,150 @@ namespace lua {
                 return true;
             }
         }
-        
-        /// Will get pointer casted to given template type
-        ///
-        /// @return Pointer staticaly casted to given template type
-        template <typename T>
-        T* getPtr() const {
-            return static_cast<T*>(Pointer(*this));
-        }
             
         /// @returns Value position on stack
         int getStackIndex() const {
             assert(_stack->pushed > 0);
             return _stack->top + 1;
         }
+        
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Conventional conversion functions
+
+        // to
+        
+        const char* toCStr() const {
+            return to<const char*>();
+        }
+        
+        std::string toString() const {
+            return to<lua::String>();
+        }
+        
+        lua::Number toNumber() const {
+            return to<lua::Number>();
+        }
+        
+        int toInt() const {
+            return to<int>();
+        }
+        
+        unsigned toUnsigned() const {
+            return to<unsigned>();
+        }
+        
+        float toFloat() const {
+            return to<float>();
+        }
+        
+        double toDouble() const {
+            return to<double>();
+        }
+        
+        /// Will get pointer casted to given template type
+        ///
+        /// @return Pointer staticaly casted to given template type
+        template <typename T>
+        T* toPtr() const {
+            return static_cast<T*>(Pointer(*this));
+        }
+        
+        // get
+        
+        bool getCStr(const char*& cstr) const {
+            return get<const char*>(cstr);
+        }
+        
+        bool getString(std::string& string) const {
+            lua::String cstr;
+            bool success = get<lua::String>(cstr);
+            
+            if (success)
+                string = cstr;
+            
+            return success;
+        }
+        
+        bool getNumber(lua::Number number) const {
+            return get<lua::Number>(number);
+        }
+        
+        bool getInt(int number) const {
+            return get<int>(number);
+        }
+        
+        bool getUnsigned(unsigned number) const {
+            return get<unsigned>(number);
+        }
+        
+        bool getFloat(float number) const {
+            return get<float>(number);
+        }
+        
+        bool getDouble(double number) const {
+            return get<double>(number);
+        }
+        
+        template <typename T>
+        T* getPtr(T*& pointer) const {
+            lua::Pointer cptr;
+            bool success = get<lua::Pointer>(cptr);
+            
+            if (success)
+                pointer = static_cast<T*>(Pointer(*this));
+            
+            return success;
+        }
+        
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Conventional setting functions
+        
+        template<typename K>
+        void setCStr(K key, const char* value) const {
+            set<const char*>(key, value);
+        }
+        
+        template<typename K>
+        void setString(K key, const std::string& string) const {
+            stack::push(_stack->state, key);
+            stack::push_str(_stack->state, string.c_str(), string.length());
+            lua_settable(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
+        }
+        
+        template<typename K>
+        void set(K key, const std::string& value) const {
+            setString<lua::String>(key, value);
+        }
+        
+        template<typename K>
+        void setNumber(K key, lua::Number number) const {
+            set<lua::Number>(key, number);
+        }
+        
+        template<typename K>
+        void setInt(K key, int number) const {
+            set<int>(key, number);
+        }
+        
+        template<typename K>
+        void setUnsigned(K key, unsigned number) const {
+            set<unsigned>(key, number);
+        }
+        
+        template<typename K>
+        void setFloat(K key, float number) const {
+            set<float>(key, number);
+        }
+        
+        template<typename K>
+        void setDouble(K key, double number) const {
+            set<double>(key, number);
+        }
+        
     };
     
     // compare operators
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     
     template <typename T>
     inline bool operator==(const Value &stateValue, const T& value) {
@@ -295,8 +426,60 @@ namespace lua {
     inline bool operator>=(const T& value, const Value &stateValue) {
         return T(stateValue) >= value;
     }
-            
+    
+    
+    
+    
+    inline bool operator==(const Value &stateValue, const std::string& value) {
+        return lua::String(stateValue) == value;
+    }
+    inline bool operator==(const std::string& value, const Value &stateValue) {
+        return lua::String(stateValue) == value;
+    }
+    
+    inline bool operator!=(const Value &stateValue, const std::string& value) {
+        return lua::String(stateValue) != value;
+    }
+    inline bool operator!=(const std::string& value, const Value &stateValue) {
+        return lua::String(stateValue) != value;
+    }
+    
+    inline bool operator<(const Value &stateValue, const std::string& value) {
+        return lua::String(stateValue) < value;
+    }
+    inline bool operator<(const std::string& value, const Value &stateValue) {
+        return lua::String(stateValue) < value;
+    }
+    
+    inline bool operator<=(const Value &stateValue, const std::string& value) {
+        return lua::String(stateValue) <= value;
+    }
+    inline bool operator<=(const std::string& value, const Value &stateValue) {
+        return lua::String(stateValue) <= value;
+    }
+    
+    inline bool operator>(const Value &stateValue, const std::string& value) {
+        return lua::String(stateValue) > value;
+    }
+    inline bool operator>(const std::string& value, const Value &stateValue) {
+        return lua::String(stateValue) > value;
+    }
+    
+    inline bool operator>=(const Value &stateValue, const std::string& value) {
+        return lua::String(stateValue) >= value;
+    }
+    inline bool operator>=(const std::string& value, const Value &stateValue) {
+        return lua::String(stateValue) >= value;
+    }
+
+    
     namespace stack {
+        
+        template<>
+        inline bool check<lua::Value>(lua_State* luaState, int index)
+        {
+            return true;
+        }
         
         /// Values direct forwarding
         template<>

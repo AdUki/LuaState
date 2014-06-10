@@ -10,7 +10,7 @@
 
 using namespace std::placeholders;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 const char* getHello()
 {
     return "Hello return\n";
@@ -21,7 +21,7 @@ int subValues(int a, int b)
     return a - b;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 struct Resource {
     static int refCounter;
     
@@ -35,7 +35,7 @@ struct Resource {
 };
 int Resource::refCounter = 0;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 struct Foo {
     int a; int b;
     
@@ -48,7 +48,7 @@ struct Foo {
 	}
 };
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
     // Create Lua state
@@ -137,6 +137,26 @@ int main(int argc, char** argv)
         assert(intValue == 10);
     }
     
+    // Type mismatch exception
+    try {
+        state["lambda"]("hello");
+        assert(false);
+    } catch (lua::TypeMismatchError ex) {
+        LUASTATE_DEBUG_LOG("%s", ex.what());
+        LUASTATE_DEBUG_LOG("Exception cought... OK");
+    }
+    
+    try {
+        state.doString("lambda('hello')");
+        assert(false);
+    } catch (lua::TypeMismatchError ex) {
+        LUASTATE_DEBUG_LOG("%s", ex.what());
+        LUASTATE_DEBUG_LOG("Exception cought... OK");
+    } catch (lua::RuntimeError ex) {
+        LUASTATE_DEBUG_LOG("%s", ex.what());
+        LUASTATE_DEBUG_LOG("Exception cought... OK");
+    }
+    
     // Test multi return
     state.set("lambda", []() -> std::tuple<lua::Integer, lua::String> {
         return std::tuple<lua::Integer, lua::String>(23, "abc");
@@ -179,7 +199,7 @@ int main(int argc, char** argv)
     assert(b == 200);
     assert(c == 300);
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     
     state.set("goodFnc", [](){ });
     state["goodFnc"]();

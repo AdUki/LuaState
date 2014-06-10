@@ -6,7 +6,7 @@
 //  Created by Simon Mikuda on 18/03/14.
 //
 //  See LICENSE and README.md files
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
@@ -46,7 +46,7 @@
 
 namespace lua {
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     /// Class that hold lua interpreter state. Lua state is managed by pointer which also is copied to lua::Ref values.
     class State
     {
@@ -72,7 +72,14 @@ namespace lua {
         }
         
         lua::Value executeLoadedFunction(int index) const {
-            if (lua_pcall(_luaState, 0, LUA_MULTRET, 0))
+            bool executed;
+            try {
+                executed = lua_pcall(_luaState, 0, LUA_MULTRET, 0) == 0;
+            } catch (lua::TypeMismatchError ex) {
+                throw ex;
+            }
+            
+            if (!executed)
                 throw RuntimeError(_luaState);
             
             int pushedValues = stack::top(_luaState) - index;
@@ -208,5 +215,42 @@ namespace lua {
         ///
         /// @return Pointer of Lua state
         lua_State* getState() { return _luaState; }
+        
+        
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Conventional setting functions
+        
+        void setCStr(lua::String key, const char* value) const {
+            set<const char*>(key, value);
+        }
+        
+        void setString(lua::String key, const std::string& string) const {
+            stack::push_str(_luaState, string.c_str(), string.length());
+            lua_setglobal(_luaState, key);
+        }
+        
+        void set(lua::String key, const std::string& value) const {
+            setString(key, value);
+        }
+        
+        void setNumber(lua::String key, lua::Number number) const {
+            set<lua::Number>(key, number);
+        }
+        
+        void setInt(lua::String key, int number) const {
+            set<int>(key, number);
+        }
+        
+        void setUnsigned(lua::String key, unsigned number) const {
+            set<unsigned>(key, number);
+        }
+        
+        void setFloat(lua::String key, float number) const {
+            set<float>(key, number);
+        }
+        
+        void setDouble(lua::String key, double number) const {
+            set<double>(key, number);
+        }
     };
 }

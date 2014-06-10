@@ -12,13 +12,13 @@
 
 namespace lua { namespace stack {
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     
     inline int top(lua_State* luaState) {
         return lua_gettop(luaState);
     }
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     
     template<typename T>
     inline int push(lua_State* luaState, T value);
@@ -167,7 +167,13 @@ namespace lua { namespace stack {
         return 1;
     }
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    inline int push_str(lua_State* luaState, const char* value, int lenght) {
+        LUASTATE_DEBUG_LOG("  PUSH  %s", value);
+        lua_pushlstring(luaState, value, lenght);
+        return 1;
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
     template<typename T>
     inline bool check(lua_State* luaState, int index);
@@ -222,6 +228,18 @@ namespace lua { namespace stack {
     {
         return lua_istable(luaState, index);
     }
+    
+    template<>
+    inline bool check<unsigned>(lua_State* luaState, int index)
+    {
+        return lua_isnumber(luaState, index);
+    }
+    
+    template<>
+    inline bool check<float>(lua_State* luaState, int index)
+    {
+        return lua_isnumber(luaState, index);
+    }
 
     template<>
     inline bool check<lua::Callable>(lua_State* luaState, int index)
@@ -243,7 +261,7 @@ namespace lua { namespace stack {
         return isCallable;
     }
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
     template<typename T>
     inline T read(lua_State* luaState, int index);
@@ -344,7 +362,7 @@ namespace lua { namespace stack {
         return static_cast<char>(lua_tostring(luaState, index)[0]);
     }
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     
     inline void settop(lua_State* luaState, int n) {
         LUASTATE_DEBUG_LOG("  POP  %d", top(luaState) - n);
@@ -370,7 +388,7 @@ namespace lua { namespace stack {
         return value;
     }
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////
     
     inline void get(lua_State* luaState, int index) {
         LUASTATE_DEBUG_LOG("GET table %d", index);

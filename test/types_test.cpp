@@ -8,7 +8,7 @@
 
 #include "test.h"
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
     // We create state and variables
@@ -246,11 +246,11 @@ int main(int argc, char** argv)
     assert(strcmp(charString = state["text"], "hello") == 0);
     assert(strcmp(charString = state["text"], "bannana") != 0);
 
-//    std::string stringValue;
-//    assert(std::string(state["text"]) == "hello");
-//    assert(state["text"] == "bannana");
-//    assert((stringValue = state["text"]) == "hello");
-//    assert((stringValue = state["text"]) == "bannana");
+    std::string stringValue = "test string";
+    state.set("value", stringValue);
+    assert(state["value"] == stringValue);
+    assert((stringValue = state["text"].toString()) == "hello");
+    assert((stringValue = state["text"].toString()) != "bannana");
     
     state.checkMemLeaks();
     return 0;
