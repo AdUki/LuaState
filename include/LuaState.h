@@ -72,14 +72,15 @@ namespace lua {
         }
         
         lua::Value executeLoadedFunction(int index) const {
-            bool executed;
-            try {
-                executed = lua_pcall(_luaState, 0, LUA_MULTRET, 0) == 0;
-            } catch (lua::TypeMismatchError ex) {
-                throw ex;
-            }
-            
-            if (!executed)
+//            bool executed;
+//            try {
+//                executed = lua_pcall(_luaState, 0, LUA_MULTRET, 0) == 0;
+//            } catch (lua::TypeMismatchError ex) {
+//                throw ex;
+//            }
+//            
+//            if (!executed)
+            if (lua_pcall(_luaState, 0, LUA_MULTRET, 0))
                 throw RuntimeError(_luaState);
             
             int pushedValues = stack::top(_luaState) - index;
