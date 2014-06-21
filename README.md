@@ -5,6 +5,8 @@ LuaState
 
 Lightweight Lua51 binding library for C++11.
 
+If you find bugs, feel free to create new issues. Also I will gladly to hear new suggestions and improvements :)
+
 #### Main features:
  * While getting values from `lua_State*` library does not use vectors or lists for memoization of key values. It uses values which are already in native Lua C API stack and simple int variables to index them.
  * To keep Lua C API stack clean. When we create lua_State*, library automaticaly creates priority queue, where we keep when and which Lua values can be removed from stack. This can be big performacne gain while querying deep structures from tables.
