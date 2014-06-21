@@ -225,9 +225,13 @@ namespace lua {
             set<const char*>(key, value);
         }
         
-        void setString(lua::String key, const std::string& string) const {
-            stack::push_str(_luaState, string.c_str(), string.length());
+        void setData(lua::String key, const char* value, size_t length) const {
+            stack::push_str(_luaState, value, length);
             lua_setglobal(_luaState, key);
+        }
+        
+        void setString(lua::String key, const std::string& string) const {
+            setData(key, string.c_str(), string.length());
         }
         
         void set(lua::String key, const std::string& value) const {

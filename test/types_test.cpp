@@ -252,6 +252,13 @@ int main(int argc, char** argv)
     assert((stringValue = state["text"].toString()) == "hello");
     assert((stringValue = state["text"].toString()) != "bannana");
     
+    char binaryData[3];
+    binaryData[0] = 'a';
+    binaryData[1] = 'b';
+    binaryData[2] = 'c';
+    state.setData("binary", binaryData, 3);
+    assert(strcmp(state["binary"], "abc") == 0);
+    
     state.checkMemLeaks();
     return 0;
 }

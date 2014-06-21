@@ -332,6 +332,13 @@ namespace lua {
         }
         
         template<typename K>
+        void setData(K key, const char* value, size_t length) const {
+            stack::push(_stack->state, key);
+            stack::push_str(_stack->state, value, length);
+            lua_settable(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
+        }
+        
+        template<typename K>
         void setString(K key, const std::string& string) const {
             stack::push(_stack->state, key);
             stack::push_str(_stack->state, string.c_str(), string.length());
