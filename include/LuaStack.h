@@ -112,9 +112,26 @@ namespace lua { namespace stack {
     }
     
     template<>
+    inline int push(lua_State* luaState, unsigned char value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %c\n", value);
+        char string[2];
+        string[0] = static_cast<char>(value);
+        string[1] = '\0';
+        lua_pushstring(luaState, string);
+        return 1;
+    }
+    
+    template<>
     inline int push(lua_State* luaState, const char* value) {
         LUASTATE_DEBUG_LOG("  PUSH  %s", value);
         lua_pushstring(luaState, value);
+        return 1;
+    }
+    
+    template<>
+    inline int push(lua_State* luaState, const unsigned char* value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %s", value);
+        lua_pushstring(luaState, reinterpret_cast<const char*>(value));
         return 1;
     }
 
@@ -323,11 +340,6 @@ namespace lua { namespace stack {
     }
 
     template<>
-    inline lua::String read(lua_State* luaState, int index) {
-        return lua_tostring(luaState, index);
-    }
-
-    template<>
     inline double read(lua_State* luaState, int index) {
         return static_cast<double>(lua_tonumber(luaState, index));
     }
@@ -343,7 +355,7 @@ namespace lua { namespace stack {
     }
 
     template<>
-    inline lua::Boolean read(lua_State* luaState, int index) {
+    inline bool read(lua_State* luaState, int index) {
         return lua_toboolean(luaState, index);
     }
 
@@ -360,6 +372,21 @@ namespace lua { namespace stack {
     template<>
     inline char read(lua_State* luaState, int index) {
         return static_cast<char>(lua_tostring(luaState, index)[0]);
+    }
+    
+    template<>
+    inline unsigned char read(lua_State* luaState, int index) {
+        return static_cast<unsigned char>(lua_tostring(luaState, index)[0]);
+    }
+    
+    template<>
+    inline const char* read(lua_State* luaState, int index) {
+        return lua_tostring(luaState, index);
+    }
+
+    template<>
+    inline const unsigned char* read(lua_State* luaState, int index) {
+        return reinterpret_cast<const unsigned char*>(lua_tostring(luaState, index));;
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////

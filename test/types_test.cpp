@@ -219,14 +219,14 @@ int main(int argc, char** argv)
     // All character types
     char             charValue;
 //    signed char      signedCharValue;
-//    unsigned char    unsignedCharValue;
+    unsigned char    unsignedCharValue;
 //    wchar_t          wcharValue;
 //    char16_t         char16Value;
 //    char32_t         char32Value;
     
     const char*            charString;
 //    const signed char*     signedCharString;
-//    const unsigned char*   unsignedCharString;
+    const unsigned char*   unsignedCharString;
 //    const wchar_t*         wcharString;
 //    const char16_t*        char16String;
 //    const char32_t*        char32String;
@@ -240,12 +240,27 @@ int main(int argc, char** argv)
     assert(state["char"] != 'b');
     assert((charValue = state["char"]) == 'a');
     assert((charValue = state["char"]) != 'b');
+
+    unsignedCharValue = 'a';
+    assert(state["char"] == unsignedCharValue);
+    unsignedCharValue = 'b';
+    assert(state["char"] != 'b');
+    assert((unsignedCharValue = state["char"]) == 'a');
+    assert((unsignedCharValue = state["char"]) != 'b');
     
     assert(strcmp(state["text"], "hello") == 0);
     assert(strcmp(state["text"], "bannana") != 0);
     assert(strcmp(charString = state["text"], "hello") == 0);
     assert(strcmp(charString = state["text"], "bannana") != 0);
-
+    
+    unsignedCharString = state["text"];
+    assert(unsignedCharString[0] == 'h');
+    assert(unsignedCharString[1] == 'e');
+    assert(unsignedCharString[2] == 'l');
+    assert(unsignedCharString[3] == 'l');
+    assert(unsignedCharString[4] == 'o');
+    assert(unsignedCharString[5] == '\0');
+    
     std::string stringValue = "test string";
     state.set("value", stringValue);
     assert(state["value"] == stringValue);
