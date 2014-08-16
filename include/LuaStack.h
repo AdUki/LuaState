@@ -383,6 +383,11 @@ namespace lua { namespace stack {
     inline const char* read(lua_State* luaState, int index) {
         return lua_tostring(luaState, index);
     }
+    
+    template<>
+    inline std::string read(lua_State* luaState, int index) {
+        return lua_tostring(luaState, index);
+    }
 
     template<>
     inline const unsigned char* read(lua_State* luaState, int index) {
