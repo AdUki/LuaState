@@ -127,7 +127,14 @@ namespace lua { namespace stack {
         lua_pushstring(luaState, value);
         return 1;
     }
-    
+
+    template<>
+    inline int push(lua_State* luaState, std::string value) {
+        LUASTATE_DEBUG_LOG("  PUSH  %s", value);
+        lua_pushstring(luaState, value.c_str());
+        return 1;
+    }
+
     template<>
     inline int push(lua_State* luaState, const unsigned char* value) {
         LUASTATE_DEBUG_LOG("  PUSH  %s", value);
