@@ -346,7 +346,11 @@ namespace lua {
         }
         
         int length() const {
+#if LUA_VERSION_NUM > 501
+            return lua_rawlen(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
+#else
             return lua_objlen(_stack->state, _stack->top + _stack->pushed - _stack->grouped);
+#endif
         }
 
         template<typename K>
