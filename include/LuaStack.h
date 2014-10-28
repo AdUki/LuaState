@@ -231,7 +231,7 @@ namespace lua { namespace stack {
     template<>
     inline bool check<lua::Nil>(lua_State* luaState, int index)
     {
-        return lua_isnil(luaState, index);
+        return lua_isnoneornil(luaState, index);
     }
     
     template<>
