@@ -13,7 +13,7 @@ namespace lua
     /// Lua table type
     struct Table {};
     
-    /// Any Lua function, C function, or table/userdata with __call methametod
+    /// Any Lua function, C function, or table/userdata with __call metamethod
     struct Callable {};
     
     typedef lua_Number Number;
