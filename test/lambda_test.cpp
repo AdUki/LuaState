@@ -243,6 +243,16 @@ int main(int argc, char** argv)
         assert(nestedLuaValue["b"] == 4);
     }
     
+    {   // LuaState treats empty return values as nil
+        lua::Value value;
+        
+        value = state.doString("return nil");
+        assert(value.is<lua::Nil>());
+        
+        value = state.doString("return");
+        assert(value.is<lua::Nil>());
+    }
+    
     state.checkMemLeaks();
     return 0;
 }
