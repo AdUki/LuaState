@@ -243,6 +243,9 @@ int main(int argc, char** argv)
         assert(nestedLuaValue["b"] == 4);
     }
     
+//    std::string hello = state["mystr"];
+//    hello = state["mystr"];
+//    
     {   // LuaState treats empty return values as nil
         lua::Value value;
         
